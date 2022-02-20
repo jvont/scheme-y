@@ -3,12 +3,15 @@
 
 #include <stdio.h>
 
+struct Env;
+
 typedef struct Object {
   enum {
     ObjInteger, ObjReal, ObjCharacter, ObjString,
     ObjSymbol, ObjBoolean, ObjPair, ObjPrimitive,
     ObjProcedure, ObjClosure, ObjPort
-    // ObjRational, ObjComplex, ObjTable
+    // ObjRational, ObjComplex,
+    // ObjTable, ObjVector, ObjTree,
   } kind;
   union {
     long integer;
@@ -20,9 +23,10 @@ typedef struct Object {
     struct { struct Object *data, *next; } pair;
     struct Object *(*primitive)(struct Object *);
     struct Object *(*procedure)(struct Object *, struct Env *);
-    struct { struct Object *params, *body, *env; } closure;
+    struct { struct Object *params, *body; } closure;
     struct { FILE *stream; char *mode; } port;
-    // struct { struct Object *items; size_t size; } table;
+    // struct { struct Object *items; size_t size, cap; } array;
+    // struct { struct Object *left, *val, *right; } tree;
   } as;
 } Object;
 
@@ -32,7 +36,7 @@ Object *obj_string(char *str);
 Object *obj_symbol(char *str);
 Object *obj_pair(Object *car, Object *cdr);
 Object *obj_primitive(Object *(*primitive)(Object *));
-Object *obj_closure(Object *params, Object *body, Object *env);
+Object *obj_closure(Object *params, Object *body);
 Object *obj_port(FILE *stream, char *mode);
 
 // size_t length(Object *list);

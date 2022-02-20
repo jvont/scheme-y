@@ -1,5 +1,5 @@
 #include "scanner.h"
-#include "runtime.h"
+#include "runtime.h"  // mem_
 
 #include <assert.h>
 #include <ctype.h>
@@ -13,11 +13,11 @@
 #include <readline/history.h>
 #endif
 
-inline static int isdelim(int c) { return isspace(c) || c == '(' || c == ')' || c == ';'; }
-inline static int isinitial(int c) { return isalpha(c) || strchr("!$%&*/:<=>?@^_~", c); }
-inline static int issubseq(int c) { return isinitial(c) || isdigit(c) || strchr("+-.", c); }
+static int isdelim(int c) { return isspace(c) || c == '(' || c == ')' || c == ';'; }
+static int isinitial(int c) { return isalpha(c) || strchr("!$%&*/:<=>?@^_~", c); }
+static int issubseq(int c) { return isinitial(c) || isdigit(c) || strchr("+-.", c); }
 
-inline static void save(Scanner *s, int c) {
+static void save(Scanner *s, int c) {
   if (s->p >= s->size) {
     if (s->size > SIZE_MAX / 2) {
       fprintf(stderr, "maximum token buffer size reached\n");
@@ -31,13 +31,15 @@ inline static void save(Scanner *s, int c) {
 
 // Get the next character from input, else port if NULL.
 void next(Scanner *s) {
-  if (s->input == NULL)
+  if (s->input)
+    s->ch = (*s->i == '\0') ? EOF : *s->i++;
+  else if (s->port)
     s->ch = fgetc(s->port->as.port.stream);
   else
-    s->ch = (*s->i == '\0') ? EOF : *s->i++;
+    s->ch = EOF;  // ERROR: no input stream
 }
 
-inline static void save_next(Scanner *s) {
+static void save_next(Scanner *s) {
   save(s, s->ch);
   next(s);
 }
@@ -134,7 +136,8 @@ Scanner *scanner_new() {
 
 // Free scanner + token buffer.
 void scanner_free(Scanner *s) {
-  if (s != NULL) free(s->buf);
+  if (s != NULL)
+    free(s->buf);
   free(s);
 }
 

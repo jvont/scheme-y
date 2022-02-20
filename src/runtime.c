@@ -41,5 +41,6 @@ Env *env_new() {
 }
 
 void env_free(Env *e) {
+  // free(e->heap);
   free(e);
 }

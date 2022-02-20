@@ -22,7 +22,7 @@ Object *obj_integer(long integer) {
 }
 
 Object *obj_real(double real) {
-  Object *obj = obj_new(ObjInteger);
+  Object *obj = obj_new(ObjReal);
   obj->as.real = real;
   return obj;
 }
@@ -52,11 +52,10 @@ Object *obj_primitive(Object *(*primitive)(Object *)) {
   return obj;
 }
 
-Object *obj_closure(Object *params, Object *body, Object *env) {
+Object *obj_closure(Object *params, Object *body) {
   Object *obj = obj_new(ObjClosure);
   obj->as.closure.params = params;
   obj->as.closure.body = body;
-  obj->as.closure.env = env;
   return obj;
 }
 

@@ -1,15 +1,15 @@
 CFLAGS = -Wall -Wextra -Wpedantic -std=c99 -g
-LDFLAGS ?=
+LDFLAGS = -lm
 
 SRCS := $(wildcard src/*.c)
 OBJS := $(SRCS:%.c=%.o)
 TESTS := $(wildcard tests/*.c)
 
 UNAME := $(shell uname)
-# ifeq ($(UNAME), Linux)
-# CFLAGS += -DUSE_READLINE
-# LDFLAGS += -lreadline
-# endif
+ifeq ($(UNAME), Linux)
+CFLAGS += -DUSE_READLINE
+LDFLAGS += -lreadline
+endif
 
 .PHONY: all tests clean
 

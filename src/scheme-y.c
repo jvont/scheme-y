@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// Object *fadd(Object *args) {
+
+// }
+
 int main(int argc, char **argv) {
   FILE *stream = stdin;
   if (argc > 1) {
@@ -19,22 +23,21 @@ int main(int argc, char **argv) {
   Env *e = env_new();
   e->s = s;
 
-  s->input = s->i = "(+ 1 2)";
-  next(s);
-
   while (1) {
-    // if (argc > 1)
-    //   next(e->s);
-    // else
-    //   input(e->s, "> ");
+    if (argc > 1)
+      next(e->s);
+    else
+      input(e->s, "> ");
 
-    Object *obj = eval(e);
-    if (obj == NULL)
+    Object *expr = parse(e);
+    if (expr == NULL)
       break;
 
-    // printf("=> ");
-    // print_expr(obj);
-    // fputc('\n', stdout);
+    Object *ret = eval(expr, e);
+
+    printf("=> ");
+    print_expr(ret);
+    fputc('\n', stdout);
   }
   return 0;
 }

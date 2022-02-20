@@ -7,6 +7,8 @@
 </figcaption>
 </figure>
 
+<br>
+
 Scheme-y is yet another implementation of Scheme. It is decidedly unstable, but I hope somebody might be able to learn something from reading its source. It is broken up into the following parts:
 
 `builtins` - Standard procedures.

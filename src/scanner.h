@@ -4,10 +4,10 @@
 #include "object.h"
 
 typedef struct Scanner {
-  Object *port;  // input port
+  Object *port;  // input port, NULL if input
   char *buf;  // token buffer
   size_t p, size;  // buffer position/size
-  char *input, *i;  // input buffer or NULL if port
+  char *input, *i;  // input buffer, NULL if port
   int ch;  // lookahead character
   enum {  // current token
     TokInvalid, TokEOF, TokDot, TokLParen, TokRParen,

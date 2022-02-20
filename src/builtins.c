@@ -1,6 +1,9 @@
 #include "builtins.h"
 #include "scanner.h"
 
+#include <errno.h>
+#include <math.h>
+#include <stdlib.h>
 #include <string.h>
 
 // #define pprint(p,...) fprintf(p->as.port.stream, __VA_ARGS__)
@@ -67,21 +70,142 @@ static Object* intern(Object **symbols, char *sym) {
 }
 
 // ---------------------------------------------------------------------------
+// Builtins
+// ---------------------------------------------------------------------------
+
+// TODO: arity checks
+
+Object *fadd(Object *args) {
+  Object *r = obj_integer(0);
+  for (; args; args = cdr(args)) {
+    Object *a = car(args);
+    if (a->kind == ObjInteger) {
+      if (r->kind == ObjInteger)
+        r->as.integer += a->as.integer;
+      else
+        r->as.real += (double)a->as.integer;
+    }
+    else if (a->kind == ObjReal) {
+      if (r->kind == ObjInteger) {
+        r->kind = ObjReal;
+        r->as.real = (double)r->as.integer + a->as.real;
+      }
+      else r->as.real += a->as.real;
+    }
+    else return NULL;
+  }
+  return r;
+}
+
+Object *fsub(Object *args) {
+  Object *r = obj_integer(0);
+  for (; args; args = cdr(args)) {
+    Object *a = car(args);
+    if (a->kind == ObjInteger) {
+      if (r->kind == ObjInteger)
+        r->as.integer -= a->as.integer;
+      else
+        r->as.real -= (double)a->as.integer;
+    }
+    else if (a->kind == ObjReal) {
+      if (r->kind == ObjInteger) {
+        r->kind = ObjReal;
+        r->as.real = (double)r->as.integer - a->as.real;
+      }
+      else r->as.real -= a->as.real;
+    }
+    else return NULL;
+  }
+  return r;
+}
+
+Object *fmul(Object *args) {
+  Object *r, *a = car(args);
+  if (a->kind == ObjInteger)
+    r = obj_integer(a->as.integer);
+  else if (a->kind == ObjReal)
+    r = obj_real(a->as.real);
+  else
+    return NULL;
+  for (args = cdr(args); args; args = cdr(args)) {
+    a = car(args);
+    if (a->kind == ObjInteger) {
+      if (r->kind == ObjInteger)
+        r->as.integer *= a->as.integer;
+      else
+        r->as.real *= (double)a->as.integer;
+    }
+    else if (a->kind == ObjReal) {
+      if (r->kind == ObjInteger) {
+        r->kind = ObjReal;
+        r->as.real = (double)r->as.integer * a->as.real;
+      }
+      else r->as.real *= a->as.real;
+    }
+    else return NULL;
+  }
+  return r;
+}
+
+Object *fdiv(Object *args) {
+  Object *r, *a = car(args);
+  if (a->kind == ObjInteger)
+    r = obj_integer(a->as.integer);
+  else if (a->kind == ObjReal)
+    r = obj_real(a->as.real);
+  else
+    return NULL;
+  for (args = cdr(args); args; args = cdr(args)) {
+    a = car(args);
+    if (a->kind == ObjInteger) {
+      if (r->kind == ObjInteger)
+        r->as.integer /= a->as.integer;
+      else
+        r->as.real /= (double)a->as.integer;
+    }
+    else if (a->kind == ObjReal) {
+      if (r->kind == ObjInteger) {
+        r->kind = ObjReal;
+        r->as.real = (double)r->as.integer / a->as.real;
+      }
+      else r->as.real /= a->as.real;
+    }
+    else return NULL;
+  }
+  return r;
+}
+
+// ---------------------------------------------------------------------------
 // Parsing
 // ---------------------------------------------------------------------------
 
-static Object *parse_obj(Env *e);
+Object *parse_number(Env *e) {
+  char *nptr = e->s->buf;
+  char *endptr;
+  long i = strtol(nptr, &endptr, 0);
+  if (errno == ERANGE)
+    return NULL; // ERROR: number too large
+  if (*endptr != '\0' || nptr == endptr) {
+    double d = strtod(nptr, &endptr);
+    if (errno == ERANGE)
+      return NULL;  // ERROR: number too large
+    return obj_real(d);
+  }
+  return obj_integer(i);
+}
+
 static Object *parse_expr(Env *e);
+Object *parse(Env *e);
 
 static Object *parse_list(Env *e) {
   scan(e->s);
   if (e->s->tok == TokRParen)
     return NULL;
-  Object *obj = parse_obj(e);
+  Object *obj = parse_expr(e);
   return cons(obj, parse_list(e));
 }
 
-static Object *parse_obj(Env *e) {
+static Object *parse_expr(Env *e) {
   switch(e->s->tok) {
     case TokInvalid: case TokEOF:
       return NULL;
@@ -91,44 +215,66 @@ static Object *parse_obj(Env *e) {
     case TokQuote:
       return cons(
         intern(&e->symbols, "quote"),
-        cons(parse_expr(e), NULL)
+        cons(parse(e), NULL)
       );
     case TokQuasiQuote:
       return cons(
         intern(&e->symbols, "quasiquote"),
-        cons(parse_expr(e), NULL)
+        cons(parse(e), NULL)
       );
     case TokComma:
       return cons(
         intern(&e->symbols, "unquote"),
-        cons(parse_expr(e), NULL)
+        cons(parse(e), NULL)
       );
     case TokCommaAt:
       return cons(
         intern(&e->symbols, "unquote-splicing"),
-        cons(parse_expr(e), NULL)
+        cons(parse(e), NULL)
       );
     // case TokVector:
-    // case TokIdentifier:
+    case TokIdentifier:
+      return intern(&e->symbols, e->s->buf);
     // case TokBoolean:
-    // case TokNumber:
+    case TokNumber:
+      return parse_number(e);
     // case TokCharacter:
     case TokString:
       return obj_string(e->s->buf);
     default:
-      return intern(&e->symbols, e->s->buf);
+      return NULL;  // ERROR: Unhandled token
   }
 }
 
-static Object *parse_expr(Env *e) {
+// Parse the next expression.
+Object *parse(Env *e) {
   scan(e->s);
-  return parse_obj(e);
+  return parse_expr(e);
 }
 
-// Evaluate the next expression.
-Object *eval(Env *e) {
-  Object *expr = parse_expr(e);
-  print_expr(expr);
-  fputc('\n', stdout);
+// Evaluate an expression.
+Object *eval(Object *expr, Env *e) {
+  // if symbol, lookup
+
+  switch (expr->kind) {
+    case ObjPair: {
+      char *op = car(expr)->as.string;
+      Object *args = cdr(expr);
+      if (!strcmp(op, "+"))
+        return fadd(args);
+      else if (!strcmp(op, "-"))
+        return fsub(args);
+      else if (!strcmp(op, "*"))
+        return fmul(args);
+      else if (!strcmp(op, "/"))
+        return fdiv(args);
+      else
+        return NULL;
+    }
+    case ObjSymbol:
+    default:
+      return expr;
+  }
+  
   return expr;
 }
