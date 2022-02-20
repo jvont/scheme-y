@@ -11,8 +11,9 @@ typedef struct Object {
     ObjSymbol, ObjBoolean, ObjPair, ObjPrimitive,
     ObjProcedure, ObjClosure, ObjPort
     // ObjRational, ObjComplex,
-    // ObjTable, ObjVector, ObjTree,
+    // ObjTable, ObjVector,
   } kind;
+  int marked;  // gc tag
   union {
     long integer;
     double real;
@@ -25,8 +26,7 @@ typedef struct Object {
     struct Object *(*procedure)(struct Object *, struct Env *);
     struct { struct Object *params, *body; } closure;
     struct { FILE *stream; char *mode; } port;
-    // struct { struct Object *items; size_t size, cap; } array;
-    // struct { struct Object *left, *val, *right; } tree;
+    // struct { struct Object *items; size_t size; } array;
   } as;
 } Object;
 
@@ -38,6 +38,9 @@ Object *obj_pair(Object *car, Object *cdr);
 Object *obj_primitive(Object *(*primitive)(Object *));
 Object *obj_closure(Object *params, Object *body);
 Object *obj_port(FILE *stream, char *mode);
+
+// #define TABLE_CAPACITY 32
+// Object *obj_array(size_t size);
 
 // size_t length(Object *list);
 
