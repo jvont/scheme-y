@@ -35,7 +35,6 @@ void *mem_realloc(void *ptr, size_t size) {
 
 Env *env_new() {
   Env *e = (Env *)mem_alloc(sizeof(Env));
-  e->s = NULL;
   e->symbols = NULL;
   return e;
 }

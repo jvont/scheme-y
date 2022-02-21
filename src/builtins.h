@@ -10,8 +10,6 @@
 
 void print_expr(Object *expr);
 
-Object *parse(Env *e);
-
 Object *eval(Object *expr, Env *e);
 
 #endif

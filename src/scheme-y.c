@@ -1,43 +1,38 @@
 #include "builtins.h"
-#include "runtime.h"
+#include "scanner.h"
 
 #include <stdio.h>
 #include <stdlib.h>
-
-// Object *fadd(Object *args) {
-
-// }
+#include <string.h>
 
 int main(int argc, char **argv) {
-  FILE *stream = stdin;
+  FILE *file = NULL;
+  Scanner *s;
   if (argc > 1) {
-    FILE *stream = fopen(argv[1], "r");
-    if (stream == NULL) {
+    file = fopen(argv[1], "r");
+    if (file == NULL) {
       perror("Cannot open file");
       return 1;
     }
+    s = scanner_stream(file);
   }
-  Scanner *s = scanner_new();
-  s->port = obj_port(stream, "r");
+  else s = scanner_prompt();
 
-  Env *e = env_new();
-  e->s = s;
+  // Env *e = env_new();
+  // e->s = s;
 
   while (1) {
-    if (argc > 1)
-      next(e->s);
-    else
-      input(e->s, "> ");
-
-    Object *expr = parse(e);
+    Object *expr = parse(s);
     if (expr == NULL)
       break;
 
-    Object *ret = eval(expr, e);
+    // Object *ret = eval(expr, e);
 
     printf("=> ");
-    print_expr(ret);
+    print_expr(expr);
     fputc('\n', stdout);
   }
+  if (file)
+    fclose(file);
   return 0;
 }

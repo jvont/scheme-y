@@ -3,24 +3,24 @@
 
 #include "object.h"
 
+#include <stdio.h>
+#include <stdbool.h>
+
 typedef struct Scanner {
-  Object *port;  // input port, NULL if input
+  FILE *stream;  // input port, NULL if input
+  char *input, *i;  // input buffer, NULL if stream
   char *buf;  // token buffer
-  size_t p, size;  // buffer position/size
-  char *input, *i;  // input buffer, NULL if port
+  size_t p, size;  // token buffer position/size
+  bool prompt;  // interactive prompt flag
+  unsigned int depth;  // nested expression depth
   int ch;  // lookahead character
-  enum {  // current token
-    TokInvalid, TokEOF, TokDot, TokLParen, TokRParen,
-    TokQuote, TokQuasiQuote, TokComma, TokCommaAt, TokVector,
-    TokIdentifier, TokBoolean, TokNumber, TokCharacter, TokString
-  } tok;
 } Scanner;
 
-Scanner *scanner_new();
+Scanner *scanner_stream(FILE *stream);
+Scanner *scanner_prompt();
 void scanner_free(Scanner *s);
 
-void input(Scanner *s, char *prompt);
 void next(Scanner *s);
-void scan(Scanner *s);
+Object *parse(Scanner *s);
 
 #endif

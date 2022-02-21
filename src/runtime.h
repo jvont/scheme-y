@@ -2,12 +2,10 @@
 #define _RUNTIME_H
 
 #include "object.h"
-#include "scanner.h"
 
 typedef struct Env {
   Object *symbols;  // bound symbols
   Object *heap;  // allocated objects
-  Scanner *s;  // token scanner
 } Env;
 
 // TODO: GC

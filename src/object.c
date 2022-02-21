@@ -27,22 +27,28 @@ Object *obj_real(double real) {
   return obj;
 }
 
-Object *obj_string(char *str) {
+Object *obj_boolean(bool boolean) {
+  Object *obj = obj_new(ObjBoolean);
+  obj->as.boolean = boolean;
+  return obj;
+}
+
+Object *obj_string(char *string) {
   Object *obj = obj_new(ObjString);
-  obj->as.string = str_new(str);
+  obj->as.string = str_new(string);
   return obj;
 }
 
-Object *obj_symbol(char *str) {
+Object *obj_symbol(char *symbol) {
   Object *obj = obj_new(ObjSymbol);
-  obj->as.string = str_new(str);
+  obj->as.string = str_new(symbol);
   return obj;
 }
 
-Object *obj_pair(Object *car, Object *cdr) {
+Object *obj_cell(Object *car, Object *cdr) {
   Object *obj = obj_new(ObjPair);
-  obj->as.pair.data = car;
-  obj->as.pair.next = cdr;
+  obj->as.cell.car = car;
+  obj->as.cell.cdr = cdr;
   return obj;
 }
 

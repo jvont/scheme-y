@@ -1,9 +1,7 @@
 #include "scanner.h"
-#include "runtime.h"  // mem_
 
-#include <assert.h>
 #include <ctype.h>
-#include <stdio.h>
+#include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,9 +11,20 @@
 #include <readline/history.h>
 #endif
 
-static int isdelim(int c) { return isspace(c) || c == '(' || c == ')' || c == ';'; }
+static int isdelim(int c) { return isspace(c) || c == '(' || c == ')' || c == ';' || c == EOF; }
 static int isinitial(int c) { return isalpha(c) || strchr("!$%&*/:<=>?@^_~", c); }
 static int issubseq(int c) { return isinitial(c) || isdigit(c) || strchr("+-.", c); }
+static int isdoublequote(int c) { return c == '"'; }
+
+// Get the next character from input, else port if NULL.
+void next(Scanner *s) {
+  if (s->input) {
+    if (*s->i == '\0')
+  }
+    s->ch = (*s->i == '\0') ? EOF : *s->i++;
+  else  // port
+    s->ch = fgetc(s->stream);
+}
 
 static void save(Scanner *s, int c) {
   if (s->p >= s->size) {
@@ -23,20 +32,11 @@ static void save(Scanner *s, int c) {
       fprintf(stderr, "maximum token buffer size reached\n");
       exit(1);
     }
-    s->buf = (char *)mem_realloc(s->buf, 2 * s->size);
+    s->buf = (char *)realloc(s->buf, 2 * s->size);
+    if (s->buf == NULL) exit(1);
   }
   s->buf[s->p++] = c;
   s->buf[s->p] = '\0';
-}
-
-// Get the next character from input, else port if NULL.
-void next(Scanner *s) {
-  if (s->input)
-    s->ch = (*s->i == '\0') ? EOF : *s->i++;
-  else if (s->port)
-    s->ch = fgetc(s->port->as.port.stream);
-  else
-    s->ch = EOF;  // ERROR: no input stream
 }
 
 static void save_next(Scanner *s) {
@@ -44,92 +44,66 @@ static void save_next(Scanner *s) {
   next(s);
 }
 
-static int match_next(Scanner *s, int c) {
-  if (s->ch == c) {
+static void save_until(Scanner *s, int (*p)(int)) {
+  while (!p(s->ch))
     save_next(s);
-    return 1;
-  }
-  return 0;
+  s->buf[s->p] = '\0';
 }
 
-static int match_next2(Scanner *s, char *pair) {
-  assert(pair[2] == '\0');
-  if (s->ch == pair[0] || s->ch == pair[1]) {
+static void save_while(Scanner *s, int (*p)(int)) {
+  while (p(s->ch))
     save_next(s);
-    return 1;
-  }
-  return 0;
+  s->buf[s->p] = '\0';
 }
 
 // Get user input, printing prompt to stdout.
-void input(Scanner *s, char *prompt) {
+static void input(Scanner *s) {
+  // print prompt
+  if (s->depth) {
+    for (int i = 0; i < s->depth * 2; i++)
+      putc('.', stdin);
+  }
+  else putc('>', stdin);
+  putc(' ', stdin);
+
 #ifdef USE_READLINE
   free(s->input);
-  s->input = s->i = readline(prompt);
+  s->input = s->i = readline("");
   add_history(s->input);
-  next(s);
 #else
-  printf("%s", prompt);
   fflush(stdout);
-  next(s);
 #endif
+  next(s);
 }
 
-// exponent = [ + | - ] { digit }- space ;
-static int scan_exponent(Scanner *s) {
-  match_next2(s, "+-");
-  if (!isdigit(s->ch))  // require digit
-    return TokInvalid;
-  while(isdigit(s->ch))
-    save_next(s);
-  return isdelim(s->ch) ? TokNumber : TokInvalid;
-}
-
-// suffix = { digit } ( exponent | space ) ;
-static int scan_suffix(Scanner *s) {
-  do {
-    save_next(s);
-    if (match_next2(s, "Ee"))
-      return scan_exponent(s);
-  } while(isdigit(s->ch));
-  return isdelim(s->ch) ? TokNumber : TokInvalid;
-}
-
-// number = digits ( suffix | exponent | space ) ;
-static int scan_number(Scanner *s) {
-  int hasdot = (s->ch == '.');
-  do {
-    save_next(s);
-    if (s->ch == '.' && !hasdot)
-      return scan_suffix(s);
-    else if (match_next2(s, "Ee"))
-      return scan_exponent(s);
-    // else if (match_next2(s, "+-"))
-    //   return scan_complex(s);
-    // else if (match_next(s, '/'))
-    //   return scan_decimal(s);
-  } while(isdigit(s->ch));
-  return isdelim(s->ch) ? TokNumber : TokInvalid;
-}
-
-// identifier = initial { subseq } space ;
-static int scan_identifier(Scanner *s) {
-  do {
-    save_next(s);
-  } while(issubseq(s->ch));
-  return isdelim(s->ch) ? TokIdentifier : TokInvalid;
-}
-
-// Create a new scanner, setting port/input to NULL.
-Scanner *scanner_new() {
+// Create a new scanner from a stream.
+Scanner *scanner_stream(FILE *stream) {
   Scanner *s = (Scanner *)malloc(sizeof(Scanner));
   if (s == NULL) exit(1);
   s->buf = (char *)malloc(BUFSIZ * sizeof(char));
   if (s->buf == NULL) exit(1);
-  s->port = NULL;
+  s->stream = stream;
   s->input = s->i = NULL;
   s->p = 0;
   s->size = BUFSIZ;
+  s->prompt = false;
+  s->depth = 0;
+  s->ch = EOF;
+  return s;
+}
+
+// Create a new scanner for interactive input.
+Scanner *scanner_prompt() {
+  Scanner *s = (Scanner *)malloc(sizeof(Scanner));
+  if (s == NULL) exit(1);
+  s->buf = (char *)malloc(BUFSIZ * sizeof(char));
+  if (s->buf == NULL) exit(1);
+  s->stream = stdin;
+  s->input = s->i = NULL;
+  s->p = 0;
+  s->size = BUFSIZ;
+  s->prompt = true;
+  s->depth = 0;
   s->ch = EOF;
   return s;
 }
@@ -141,105 +115,111 @@ void scanner_free(Scanner *s) {
   free(s);
 }
 
-// Scan the next token.
-void scan(Scanner *s) {
+// San until next delimiter.
+static Object *parse_error(Scanner *s) {
+  save_until(s, isdelim);
+  return NULL;
+}
+
+// number = integer | real ;
+static Object *parse_number(Scanner *s) {
+  save_until(s, isdelim);
+  char *nptr = s->buf;
+  char *endptr;
+  long i = strtol(nptr, &endptr, 0);
+  if (errno == ERANGE || *endptr != '\0') {
+    double d = strtod(nptr, &endptr);
+    if (errno == ERANGE || *endptr != '\0')
+      return parse_error(s);  // ERROR: number too large
+    else
+      return obj_real(d);
+  }
+  return obj_integer(i);
+}
+
+// identifier = initial { subseq } ;
+static Object *parse_identifier(Scanner *s) {
+  save_while(s, issubseq);
+  s->buf[s->p] = '\0';
+  return isdelim(s->ch) ? obj_symbol(s->buf) : parse_error(s);
+}
+
+static Object *parse_expr(Scanner *s);
+
+// Parse a list expression.
+static Object *parse_list(Scanner *s) {
+  // next(s);
+  if (s->ch == ')')
+    return NULL;
+  Object *obj = parse(s);
+  return obj_cell(obj, parse_list(s));
+}
+
+// Parse the next expression.
+static Object *parse_expr(Scanner *s) {
   s->p = 0;
-  s->tok = TokInvalid;
   while (isspace(s->ch))  // skip whitespace
     next(s);
   if (isinitial(s->ch))  // identifier
-    s->tok = scan_identifier(s);
+    return parse_identifier(s);
   else if (isdigit(s->ch))  // number
-    s->tok = scan_number(s);
+    return parse_number(s);
   else switch (s->ch) {
-    case EOF:
-      s->tok = TokEOF;
-      break;
     case '+': case '-':
       save_next(s);
-      if (s->ch == '.')  // ( + | - ) . suffix
-        s->tok = scan_suffix(s);
-      else if (isdigit(s->ch))  // ( + | - ) number
-        s->tok = scan_number(s);
+      if (s->ch == '.' || isdigit(s->ch))  // ( + | - ) [ . ] { digit }
+        return parse_number(s);
       else if (isdelim(s->ch))  // ( + | - )
-        s->tok = TokIdentifier;
-      else
-        s->tok = TokInvalid;
+        return parse_identifier(s);
       break;
     case '.':
       save_next(s);
-      if (s->ch == '.')  // .. subseq
-        s->tok = scan_identifier(s);
-      else if (isdigit(s->ch))  // . suffix
-        s->tok = scan_suffix(s);
-      else if (isdelim(s->ch))  // dotsep
-        s->tok = TokDot;
-      else
-        s->tok = TokInvalid;
+      // if (s->ch == '\0')  // dotsep
+      //   return
+      if (s->ch == '.')  // .. { subseq }
+        return parse_identifier(s);
+      else if (isdigit(s->ch))  // . { digit }
+        return parse_number(s);
       break;
     case '"':
       next(s);
-      while (s->ch != '"') {  // string
-        if (s->ch == EOF)  // unterminated
-          s->tok = TokInvalid;
-        else
-          save_next(s);
-      }
+      save_until(s, isdoublequote);
       next(s);
-      s->tok = TokString;
-      break;
+      return obj_string(s->buf);
     case '#':
-      save_next(s);
-      if (match_next2(s, "tf"))  // boolean
-        s->tok = TokBoolean;
-      else switch (s->ch) {
+      next(s);
+      switch (s->ch) {
+        case 't':
+          return obj_boolean(1);
+        case 'f':
+          return obj_boolean(0);
         case '(':  // vector
-          save_next(s);
-          s->tok = TokVector;
-          break;
         case '\\':  // character
-          save_next(s);
-          if (isdelim(s->ch)) {  // empty
-            s->tok = TokCharacter;
-            break;
-          }
-          // FALLTHROUGH
         default:
-          s->tok = TokInvalid;
           break;
       }
-      break;
     case '(':
-      save_next(s);
-      s->tok = TokLParen;
-      break;
-    case ')':
-      save_next(s);
-      s->tok = TokRParen;
-      break;
-    case '\'':
-      save_next(s);
-      s->tok = TokQuote;
-      break;
-    case '`':
-      save_next(s);
-      s->tok = TokQuasiQuote;
-      break;
-    case ',':
-      save_next(s);
-      if (match_next(s, '@'))  // ,@
-        s->tok = TokCommaAt;
-      else
-        s->tok = TokComma;
-      break;
+      next(s);
+      return parse_list(s);
+    // case '\'':  // quote
+    //   break;
+    // case '`':  // quasiquote
+    //   break;
+    // case ',':
+    //   save_next(s);
+    //   if (s->ch == '@')  // ,@
+    //   else
+    //   break;
+    // case EOF:
     default:
-      save_next(s);
-      s->tok = TokInvalid;
       break;
   }
-  if (s->tok == TokInvalid) {  // scan rest of invalid token
-    while (!isdelim(s->ch))
-      save_next(s);
-  }
-  s->buf[s->p] = '\0';
+  return parse_error(s);
+}
+
+// Parse a series of expressions.
+Object *parse(Scanner *s) {
+  next(s);
+
+  return parse_expr(s);
 }
