@@ -19,4 +19,4 @@ Scheme-y is yet another implementation of Scheme. It is decidedly unstable, but 
 
 `runtime` - Memory management.
 
-Installation requires `gcc`, `make`. Optionally, `libreadline` for Linux may be used to make the REPL easier to use. You can build and run tests using `make tests`. Otherwise, you can just build using `make`.
+Installation requires `gcc`, `make`. Optionally, `libreadline` for Linux is handy for repl command history, but not required. You can build and run tests using `make tests`. Otherwise, you can just build using `make`.

@@ -4,17 +4,20 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+struct Obj;
 struct Env;
 
-typedef struct Object {
+typedef struct Obj *(Func)(struct Obj *);
+typedef struct Obj *(Proc)(struct Obj *, struct Env *);
+
+typedef struct Obj {
   enum {
-    ObjInteger, ObjReal, ObjBoolean, ObjCharacter,
-    ObjString, ObjSymbol, ObjPair, ObjPrimitive,
-    ObjProcedure, ObjClosure, ObjPort
-    // ObjRational, ObjComplex,
-    // ObjTable, ObjVector,
+    ObjInteger, ObjReal, // ObjRational, ObjComplex,
+    ObjBoolean, ObjCharacter, ObjString, ObjSymbol,
+    ObjPrimitive, ObjProcedure, ObjCell, ObjClosure,
+    ObjPort, ObjTable, ObjVector,
   } kind;
-  int marked;  // gc tag
+  bool marked;  // gc tag
   union {
     long integer;
     double real;
@@ -23,29 +26,34 @@ typedef struct Object {
     bool boolean;
     int character;
     char *string;
-    struct { struct Object *car, *cdr; } cell;
-    struct Object *(*primitive)(struct Object *);
-    struct Object *(*procedure)(struct Object *, struct Env *);
-    struct { struct Object *params, *body; } closure;
-    struct { FILE *stream; char *mode; } port;
-    // struct { struct Object *items; size_t size; } vector;
+    Func *primitive;
+    Proc *procedure;
+    struct { struct Obj *car, *cdr; } cell;
+    struct { struct Obj *params, *body; } closure;
+    struct { FILE *stream; char mode[2]; } port;
+    struct { struct Obj *items; size_t size; } vector;
+    struct Env* environment;
   } as;
-} Object;
+} Obj;
 
-Object *obj_integer(long integer);
-Object *obj_real(double real);
-Object *obj_boolean(bool boolean);
-// Object *obj_character(int character);
-Object *obj_string(char *string);
-Object *obj_symbol(char *symbol);
-Object *obj_cell(Object *car, Object *cdr);
-Object *obj_primitive(Object *(*primitive)(Object *));
-Object *obj_closure(Object *params, Object *body);
-Object *obj_port(FILE *stream, char *mode);
+typedef struct Env {
+  Obj *bindings;
+  struct Env *parent;
+} Env;
 
-// #define TABLE_CAPACITY 32
-// Object *obj_array(size_t size);
+Obj *obj_integer(long integer);
+Obj *obj_real(double real);
+Obj *obj_boolean(bool boolean);
+Obj *obj_character(int character);
+Obj *obj_string(char *string);
+Obj *obj_symbol(char *symbol);
+Obj *obj_primitive(Func* primitive);
+Obj *obj_procedure(Proc* procedure);
+Obj *obj_cell(Obj *car, Obj *cdr);
+Obj *obj_closure(Obj *params, Obj *body);
+Obj *obj_port(FILE *stream, char *mode);
+Obj *obj_vector(size_t size);
 
-// size_t length(Object *list);
+void obj_free(Obj *obj);
 
 #endif

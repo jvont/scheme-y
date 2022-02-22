@@ -8,8 +8,8 @@
 
 // void builtins_init(Env *e);
 
-void print_expr(Object *expr);
+void print_expr(Obj *expr);
 
-Object *eval(Object *expr, Env *e);
+Obj *eval(Obj *expr, Env *e);
 
 #endif

@@ -12,39 +12,25 @@
 #include <readline/history.h>
 #endif
 
-static SchemeY *sy_new() {
+// Create a new scheme state from an input stream.
+// If stream is stdin, interactive mode is used.
+SchemeY *sy_new(FILE *stream) {
   SchemeY *s = (SchemeY *)malloc(sizeof(SchemeY));
   if (s == NULL) exit(1);
-  s->stream = NULL;
+  s->stream = stream;
   s->line = s->i = NULL;
-  s->ch = '\n';  // prompt flag
+  s->ch = (stream == stdin) ? '\n' : EOF;
   s->buf = (char *)malloc(BUFSIZ * sizeof(char));
   if (s->buf == NULL) exit(1);
   s->p = 0;
   s->size = BUFSIZ;
   s->lineno = 1;
-  s->prompt = false;
   s->depth = 0;
   s->err = ErrOK;
   return s;
 }
 
-// Create a new scanner from a stream.
-SchemeY *sy_stream(FILE *stream) {
-  SchemeY *s = sy_new();
-  s->stream = stream;
-  return s;
-}
-
-// Create a new scanner for interactive input.
-SchemeY *sy_prompt() {
-  SchemeY *s = sy_new();
-  s->stream = stdin;
-  s->prompt = true;
-  return s;
-}
-
-// Free scanner + token buffer.
+// Free state + token buffer.
 void sy_free(SchemeY *s) {
   if (s != NULL) {
     free(s->line);
@@ -57,14 +43,18 @@ void sy_free(SchemeY *s) {
 // Scanning
 // ---------------------------------------------------------------------------
 
+static int iswspace(int c) { return isspace(c); }
 static int isdelim(int c) { return isspace(c) || c == '(' || c == ')' || c == ';'; }
 static int isinitial(int c) { return isalpha(c) || strchr("!$%&*/:<=>?@^_~", c); }
 static int issubseq(int c) { return isinitial(c) || isdigit(c) || strchr("+-.", c); }
 
 // Get user input, printing prompt to stdout.
 static void input_prompt(SchemeY *s) {
-  for (unsigned int i = 0; i <= s->depth; i++)
-    putc('>', stdout);
+  if (s->depth) {
+    for (size_t i = 0; i <= s->depth; i++)
+      putc('.', stdout);
+  }
+  else putc('>', stdout);
   putc(' ', stdout);
 #ifdef USE_READLINE
   free(s->line);
@@ -79,7 +69,7 @@ static void input_prompt(SchemeY *s) {
 
 // Get the next character from file stream/interactive prompt.
 static void next(SchemeY *s) {
-  if (s->prompt) {
+  if (s->stream == stdin) {
 #ifdef USE_READLINE
     if (s->ch == '\n')
       input_prompt(s);
@@ -141,14 +131,14 @@ static void skip_while(SchemeY *s, int (*p)(int)) {
 // ---------------------------------------------------------------------------
 
 // Scan an invalid token until next delimiter.
-static Object *parse_invalid(SchemeY *s) {
+static Obj *parse_invalid(SchemeY *s) {
   s->err = ErrInvalid;
   save_until(s, isdelim);
   return NULL;
 }
 
 // Number = integer | real ;
-static Object *parse_number(SchemeY *s) {
+static Obj *parse_number(SchemeY *s) {
   save_until(s, isdelim);
   char *nptr = s->buf;
   char *endptr;
@@ -164,7 +154,7 @@ static Object *parse_number(SchemeY *s) {
 }
 
 // String = " { ( character | escape ) - " } " ;
-static Object *parse_string(SchemeY *s) {
+static Obj *parse_string(SchemeY *s) {
   next(s);
   while (s->ch != '"') {
     if (s->ch == '\\')  // string escape
@@ -180,34 +170,34 @@ static Object *parse_string(SchemeY *s) {
 }
 
 // Identifier = initial { subseq } ;
-static Object *parse_identifier(SchemeY *s) {
+static Obj *parse_identifier(SchemeY *s) {
   save_while(s, issubseq);
   s->buf[s->p] = '\0';
   return isdelim(s->ch) ? obj_symbol(s->buf) : parse_invalid(s);
 }
 
-static Object *parse_expr(SchemeY *s);
+static Obj *parse_expr(SchemeY *s);
 
 // Parse a list expression.
-static Object *parse_list(SchemeY *s) {
-  skip_while(s, isspace);  // skip whitespace
+static Obj *parse_list(SchemeY *s) {
+  skip_while(s, iswspace);  // skip whitespace
   if (s->ch == ')') {
     s->depth--;
     next(s);
     return NULL;
   }
   bool dotsep = (s->ch == '.');
-  Object *obj = parse_expr(s);
-  Object *rest = parse_list(s);
+  Obj *obj = parse_expr(s);
+  Obj *rest = parse_list(s);
   if (dotsep && rest)
     s->err = ErrDotsep;
   return dotsep ? obj : obj_cell(obj, rest);
 }
 
 // Parse an expression.
-static Object *parse_expr(SchemeY *s) {
+static Obj *parse_expr(SchemeY *s) {
   s->p = 0;
-  skip_while(s, isspace);  // skip whitespace
+  skip_while(s, iswspace);  // skip whitespace
   if (s->ch == '(') {  // list (common)
     s->depth++;
     next(s);
@@ -270,25 +260,26 @@ static Object *parse_expr(SchemeY *s) {
 }
 
 // Parse a series of expressions.
-Object *sy_parse(SchemeY *s) {
+Obj *sy_parse(SchemeY *s) {
   s->err = ErrOK;
   next(s);
   return parse_expr(s);
 }
 
 // ---------------------------------------------------------------------------
-// Error handling
+// Errors
 // ---------------------------------------------------------------------------
 
 static const char *err_msgs[] = {
   [ErrOK] = "no error found",
   [ErrEOF] = "unexpected EOF",
   [ErrInvalid] = "invalid token",
-  [ErrDotsep] = "invalid dot separator",
+  [ErrDotsep] = "invalid token following dot separator",
 };
 
 // Print the current error status message.
 void sy_error(SchemeY *s) {
   assert(s->err >= 0 && s->err < sizeof(err_msgs) / sizeof(*err_msgs));
-  printf("Syntax Error (%zu): %s\n", s->lineno, err_msgs[s->err]);
+  printf("Syntax Error: %s\n", err_msgs[s->err]);
+  printf("Line %zu, at \"%s\"\n", s->lineno, s->buf);
 }

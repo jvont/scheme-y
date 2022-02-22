@@ -9,14 +9,14 @@
 // #define pputc(p,c) fputc(c, p->as.port.stream)
 // #define pgetc(p) fgetc(p->as.port.stream)
 
-Object *car(Object *obj) { return obj->as.cell.car; }
-Object *cdr(Object *obj) { return obj->as.cell.cdr; }
-Object *cons(Object *car, Object *cdr) { return obj_cell(car, cdr); }
+Obj *car(Obj *obj) { return obj->as.cell.car; }
+Obj *cdr(Obj *obj) { return obj->as.cell.cdr; }
+Obj *cons(Obj *car, Obj *cdr) { return obj_cell(car, cdr); }
 
-static void print_list(Object *expr) {
+static void print_list(Obj *expr) {
   print_expr(car(expr));
   if (cdr(expr)) {
-    if (cdr(expr)->kind == ObjPair) {
+    if (cdr(expr)->kind == ObjCell) {
       fputc(' ', stdout);
       print_list(cdr(expr));
     }
@@ -27,7 +27,7 @@ static void print_list(Object *expr) {
   }
 }
 
-void print_expr(Object *expr) {
+void print_expr(Obj *expr) {
   switch (expr->kind) {
     case ObjInteger:
       printf("%ld", expr->as.integer);
@@ -44,7 +44,7 @@ void print_expr(Object *expr) {
     case ObjSymbol:
       printf("%s", expr->as.string);
       break;
-    case ObjPair:
+    case ObjCell:
       fputc('(', stdout);
       print_list(expr);
       fputc(')', stdout);
@@ -58,7 +58,7 @@ void print_expr(Object *expr) {
 }
 
 // store string in symbols list 'elegantly'
-// static Object* intern(Object **symbols, char *sym) {
+// static Obj* intern(Obj **symbols, char *sym) {
 //   while (*symbols) {
 //     int cmp = strcmp(sym, car(*symbols)->as.string);
 //     if (cmp == 0)
@@ -77,10 +77,10 @@ void print_expr(Object *expr) {
 
 // TODO: arity checks
 
-Object *fadd(Object *args) {
-  Object *r = obj_integer(0);
+Obj *fadd(Obj *args) {
+  Obj *r = obj_integer(0);
   for (; args; args = cdr(args)) {
-    Object *a = car(args);
+    Obj *a = car(args);
     if (a->kind == ObjInteger) {
       if (r->kind == ObjInteger)
         r->as.integer += a->as.integer;
@@ -99,10 +99,10 @@ Object *fadd(Object *args) {
   return r;
 }
 
-Object *fsub(Object *args) {
-  Object *r = obj_integer(0);
+Obj *fsub(Obj *args) {
+  Obj *r = obj_integer(0);
   for (; args; args = cdr(args)) {
-    Object *a = car(args);
+    Obj *a = car(args);
     if (a->kind == ObjInteger) {
       if (r->kind == ObjInteger)
         r->as.integer -= a->as.integer;
@@ -121,8 +121,8 @@ Object *fsub(Object *args) {
   return r;
 }
 
-Object *fmul(Object *args) {
-  Object *r, *a = car(args);
+Obj *fmul(Obj *args) {
+  Obj *r, *a = car(args);
   if (a->kind == ObjInteger)
     r = obj_integer(a->as.integer);
   else if (a->kind == ObjReal)
@@ -149,8 +149,8 @@ Object *fmul(Object *args) {
   return r;
 }
 
-Object *fdiv(Object *args) {
-  Object *r, *a = car(args);
+Obj *fdiv(Obj *args) {
+  Obj *r, *a = car(args);
   if (a->kind == ObjInteger)
     r = obj_integer(a->as.integer);
   else if (a->kind == ObjReal)
@@ -178,13 +178,13 @@ Object *fdiv(Object *args) {
 }
 
 // Evaluate an expression.
-Object *eval(Object *expr, Env *e) {
+Obj *eval(Obj *expr, Env *e) {
   // if symbol, lookup
 
   switch (expr->kind) {
-    case ObjPair: {
+    case ObjCell: {
       char *op = car(expr)->as.string;
-      Object *args = cdr(expr);
+      Obj *args = cdr(expr);
       if (!strcmp(op, "+"))
         return fadd(args);
       else if (!strcmp(op, "-"))
