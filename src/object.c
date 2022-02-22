@@ -33,6 +33,9 @@ Object *obj_boolean(bool boolean) {
   return obj;
 }
 
+// Object *obj_character(int character) {
+// }
+
 Object *obj_string(char *string) {
   Object *obj = obj_new(ObjString);
   obj->as.string = str_new(string);

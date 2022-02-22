@@ -1,5 +1,4 @@
 #include "builtins.h"
-#include "scanner.h"
 
 #include <errno.h>
 #include <math.h>
@@ -177,83 +176,6 @@ Object *fdiv(Object *args) {
   }
   return r;
 }
-
-// ---------------------------------------------------------------------------
-// Parsing
-// ---------------------------------------------------------------------------
-
-// Object *parse_number(Env *e) {
-//   char *nptr = e->s->buf;
-//   char *endptr;
-//   long i = strtol(nptr, &endptr, 0);
-//   if (errno == ERANGE)
-//     return NULL; // ERROR: number too large
-//   if (*endptr != '\0' || nptr == endptr) {
-//     double d = strtod(nptr, &endptr);
-//     if (errno == ERANGE)
-//       return NULL;  // ERROR: number too large
-//     return obj_real(d);
-//   }
-//   return obj_integer(i);
-// }
-
-// static Object *parse_expr(Env *e);
-// Object *parse(Env *e);
-
-// static Object *parse_list(Env *e) {
-//   scan(e->s);
-//   if (e->s->tok == TokRParen)
-//     return NULL;
-//   Object *obj = parse_expr(e);
-//   return cons(obj, parse_list(e));
-// }
-
-// static Object *parse_expr(Env *e) {
-//   switch(e->s->tok) {
-//     case TokInvalid: case TokEOF:
-//       return NULL;
-//     // case TokDot:
-//     case TokLParen:
-//       return parse_list(e);
-//     case TokQuote:
-//       return cons(
-//         intern(&e->symbols, "quote"),
-//         cons(parse(e), NULL)
-//       );
-//     case TokQuasiQuote:
-//       return cons(
-//         intern(&e->symbols, "quasiquote"),
-//         cons(parse(e), NULL)
-//       );
-//     case TokComma:
-//       return cons(
-//         intern(&e->symbols, "unquote"),
-//         cons(parse(e), NULL)
-//       );
-//     case TokCommaAt:
-//       return cons(
-//         intern(&e->symbols, "unquote-splicing"),
-//         cons(parse(e), NULL)
-//       );
-//     // case TokVector:
-//     case TokIdentifier:
-//       return intern(&e->symbols, e->s->buf);
-//     // case TokBoolean:
-//     case TokNumber:
-//       return parse_number(e);
-//     // case TokCharacter:
-//     case TokString:
-//       return obj_string(e->s->buf);
-//     default:
-//       return NULL;  // ERROR: Unhandled token
-//   }
-// }
-
-// // Parse the next expression.
-// Object *parse(Env *e) {
-//   scan(e->s);
-//   return parse_expr(e);
-// }
 
 // Evaluate an expression.
 Object *eval(Object *expr, Env *e) {

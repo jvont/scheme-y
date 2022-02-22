@@ -5,6 +5,7 @@ SRCS := $(wildcard src/*.c)
 OBJS := $(SRCS:%.c=%.o)
 TESTS := $(wildcard tests/*.c)
 
+# Linux-only readline library
 UNAME := $(shell uname)
 ifeq ($(UNAME), Linux)
 CFLAGS += -DUSE_READLINE
