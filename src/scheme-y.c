@@ -240,16 +240,16 @@ static Obj *parse_expr(SchemeY *s) {
       }
     case '\'':
       next(s);
-      return obj_symbol("quote");
+      return obj_cell(obj_symbol("quote"), obj_cell(parse_expr(s), NULL));
     case '`':
       next(s);
-      return obj_symbol("quasiquote");
+      return obj_cell(obj_symbol("quasiquote"), obj_cell(parse_expr(s), NULL));
     case ',':
       next(s);
       if (s->ch == '@')
-        return obj_symbol("unquote-splicing");
+        return obj_cell(obj_symbol("unquote-splicing"), obj_cell(parse_expr(s), NULL));
       else
-        return obj_symbol("unquote");
+        return obj_cell(obj_symbol("unquote"), obj_cell(parse_expr(s), NULL));
     case EOF:
       s->err = ErrEOF;
       return NULL;
