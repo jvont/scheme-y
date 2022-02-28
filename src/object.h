@@ -1,59 +1,63 @@
-#ifndef _OBJECT_H
-#define _OBJECT_H
+/*
+** Scheme's object representation.
+*/
+#ifndef _SY_OBJECT_H
+#define _SY_OBJECT_H
+
+#include "scheme-y.h"
 
 #include <stdio.h>
 #include <stdbool.h>
 
-struct Obj;
-struct Env;
+#define car(c) ((c)->as.pair.car)
+#define cdr(c) ((c)->as.pair.cdr)
 
-typedef struct Obj *(Func)(struct Obj *);
-typedef struct Obj *(Proc)(struct Obj *, struct Env *);
+typedef struct cell cell;
+typedef cell *(ffun)(struct SchemeY *, cell *);
 
-typedef struct Obj {
+struct cell {
   enum {
-    ObjInteger, ObjReal, // ObjRational, ObjComplex,
-    ObjBoolean, ObjCharacter, ObjString, ObjSymbol,
-    ObjPrimitive, ObjProcedure, ObjCell, ObjClosure,
-    ObjPort, ObjTable, ObjVector,
-  } kind;
-  bool marked;  // gc tag
+    TyInteger = 1, TyReal, /* TyRational, TyComplex, */
+    TyBoolean, TyCharacter, TyString, TySymbol, TyFFun,
+    TyClosure, TyEnv, TyPair, TyVector, TyTable, TyPort
+  } kind;  
   union {
     long integer;
     double real;
-    // struct { long n; long d; } rational;
-    // struct { double r; double i; } complex;
-    bool boolean;
+    /* struct { long n; long d; } rational; */
+    /* struct { double r; double i; } complex; */
     int character;
     char *string;
-    Func *primitive;
-    Proc *procedure;
-    struct { struct Obj *car, *cdr; } cell;
-    struct { struct Obj *params, *body; } closure;
+    ffun *ffun;
+    struct { cell *car, *cdr; } pair;
+    struct { cell *items; unsigned int length, size; } vector;
     struct { FILE *stream; char mode[2]; } port;
-    struct { struct Obj *items; size_t size; } vector;
-    struct Env* environment;
   } as;
-} Obj;
+};
 
-typedef struct Env {
-  Obj *bindings;
-  struct Env *parent;
-} Env;
+cell *syO_kind (SchemeY *s, int kind);
 
-Obj *obj_integer(long integer);
-Obj *obj_real(double real);
-Obj *obj_boolean(bool boolean);
-Obj *obj_character(int character);
-Obj *obj_string(char *string);
-Obj *obj_symbol(char *symbol);
-Obj *obj_primitive(Func* primitive);
-Obj *obj_procedure(Proc* procedure);
-Obj *obj_cell(Obj *car, Obj *cdr);
-Obj *obj_closure(Obj *params, Obj *body);
-Obj *obj_port(FILE *stream, char *mode);
-Obj *obj_vector(size_t size);
+cell *syO_integer   (SchemeY *s, long integer);
+cell *syO_real      (SchemeY *s, double real);
+cell *syO_character (SchemeY *s, int character);
+cell *syO_string    (SchemeY *s, char *string);
+cell *syO_symbol    (SchemeY *s, char *symbol);
+cell *syO_ffun      (SchemeY *s, ffun *ffun);
+cell *syO_cons      (SchemeY *s, cell *car, cell *cdr);
+cell *syO_vector    (SchemeY *s, unsigned int size);
+cell *syO_table    (SchemeY *s, unsigned int size);
+cell *syO_port      (SchemeY *s, FILE *stream, char *mode);
 
-void obj_free(Obj *obj);
+
+// #define initobj(o,k) ((o)->kind = k, unmark(o))
+
+// #define setint(o,i)      (initobj(o, TyInteger), (o)->as.integer = (i))
+// #define setreal(o,r)     (initobj(o, TyReal), (o)->as.real = (r))
+// #define setchar(o,c)     (initobj(o, TyCharacter), (o)->as.character = (c))
+// #define setstring(o,s)   (initobj(o, TyString), (o)->as.string = (s))
+// #define setffun(o,f)     (initobj(o, TyFFun), (o)->as.ffun = (f))
+// #define setcons(o,a,d)   (initobj(o, TyPair), car(o) = (a), cdr(o) = (d))
+// #define setvector(o,v,s) (initobj(o, TyVector), (o)->as.vector.items=v,\
+//                           (o)->as.vector.len = 0, (o)->as.vector.size = s)
 
 #endif

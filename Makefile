@@ -1,16 +1,10 @@
-CFLAGS = -Wall -Wextra -Wpedantic -std=c99 -g
+# CFLAGS = -Wall -Wextra -Wpedantic -ansi -std=c99 -g
+CFLAGS = -ansi -std=c99 -g
 LDFLAGS = -lm
 
 SRCS := $(wildcard src/*.c)
 OBJS := $(SRCS:%.c=%.o)
 TESTS := $(wildcard tests/*.c)
-
-# Linux-only readline library
-UNAME := $(shell uname)
-ifeq ($(UNAME), Linux)
-CFLAGS += -DUSE_READLINE
-LDFLAGS += -lreadline
-endif
 
 .PHONY: all tests clean
 

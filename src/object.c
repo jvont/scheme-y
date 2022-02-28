@@ -1,114 +1,86 @@
 #include "object.h"
-#include "runtime.h"
+#include "state.h"
+#include "mem.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-static Obj *obj_new(int kind) {
-  Obj *obj = (Obj *)mem_calloc(1, sizeof(Obj));
-  obj->kind = kind;
-  return obj;
+cell *syO_integer(SchemeY *s, long integer) {
+  cell *p = syM_alloc(s, sizeof(cell));
+  p->kind = TyInteger;
+  p->as.integer = integer;
+  return p;
 }
 
-static char *str_new(char *src) {
-  char *dest = (char *)mem_calloc(strlen(src), sizeof(char));
-  return strcpy(dest, src);
+cell *syO_real(SchemeY *s, double real) {
+  cell *p = syM_alloc(s, sizeof(cell));
+  p->kind = TyReal;
+  p->as.real = real;
+  return p;
 }
 
-Obj *obj_integer(long integer) {
-  Obj *obj = obj_new(ObjInteger);
-  obj->as.integer = integer;
-  return obj;
+cell *syO_character(SchemeY *s, int character) {
+  cell *p = syM_alloc(s, sizeof(cell));
+  p->kind = TyCharacter;
+  p->as.character = character;
+  return p;
 }
 
-Obj *obj_real(double real) {
-  Obj *obj = obj_new(ObjReal);
-  obj->as.real = real;
-  return obj;
+cell *syO_string(SchemeY *s, char *string) {
+  cell *p = syM_alloc(s, sizeof(cell));
+  p->kind = TyString;
+  p->as.string = syM_strdup(s, string);
+  return p;
 }
 
-Obj *obj_boolean(bool boolean) {
-  Obj *obj = obj_new(ObjBoolean);
-  obj->as.boolean = boolean;
-  return obj;
+cell *syO_symbol(SchemeY *s, char *symbol) {
+  cell *p = syM_alloc(s, sizeof(cell));
+  p->kind = TySymbol;
+  p->as.string = syM_strdup(s, symbol);
+  return p;
 }
 
-Obj *obj_character(int character) {
-  Obj *obj = obj_new(ObjCharacter);
-  obj->as.character = character;
-  return obj;
+cell *syO_ffun(SchemeY *s, ffun *ffun) {
+  cell *p = syM_alloc(s, sizeof(cell));
+  p->kind = TyFFun;
+  p->as.ffun = ffun;
+  return p;
 }
 
-Obj *obj_string(char *string) {
-  Obj *obj = obj_new(ObjString);
-  obj->as.string = str_new(string);
-  return obj;
+cell *syO_cons(SchemeY *s, cell *car, cell *cdr) {
+  cell *p = syM_alloc(s, sizeof(cell));
+  p->kind = TyPair;
+  p->as.pair.car = car;
+  p->as.pair.cdr = cdr;
+  return p;
 }
 
-Obj *obj_symbol(char *symbol) {
-  Obj *obj = obj_new(ObjSymbol);
-  obj->as.string = str_new(symbol);
-  return obj;
+cell *syO_vector(SchemeY *s, unsigned int size) {
+  cell *arr = syM_calloc(s, size + 1, sizeof(cell));
+  cell *p = arr;
+  p->kind = TyVector;
+  p->as.vector.items = arr + 1;
+  p->as.vector.length = 0;
+  p->as.vector.size = size;
+  return p;
 }
 
-Obj *obj_primitive(Obj *(*primitive)(Obj *)) {
-  Obj *obj = obj_new(ObjPrimitive);
-  obj->as.primitive = primitive;
-  return obj;
+cell *syO_table(SchemeY *s, unsigned int size) {
+  cell *arr = syM_calloc(s, size + 1, sizeof(cell));
+  cell *p = arr;
+  p->kind = TyTable;
+  p->as.vector.items = arr + 1;
+  p->as.vector.length = 0;
+  p->as.vector.size = size;
+  for (unsigned int i = 1; i < size + 1; i++)
+    arr[i].kind = TyPair;
+  return p;
 }
 
-Obj *obj_procedure(Proc* procedure) {
-  Obj *obj = obj_new(ObjProcedure);
-  obj->as.procedure = procedure;
-  return obj;
-}
-
-Obj *obj_cell(Obj *car, Obj *cdr) {
-  Obj *obj = obj_new(ObjCell);
-  obj->as.cell.car = car;
-  obj->as.cell.cdr = cdr;
-  return obj;
-}
-
-Obj *obj_closure(Obj *params, Obj *body) {
-  Obj *obj = obj_new(ObjClosure);
-  obj->as.closure.params = params;
-  obj->as.closure.body = body;
-  return obj;
-}
-
-Obj *obj_port(FILE *stream, char *mode) {
-  Obj *obj = obj_new(ObjPort);
-  obj->as.port.stream = stream;
-  strncpy(obj->as.port.mode, mode, 2);
-  return obj;
-}
-
-Obj *obj_vector(size_t size) {
-  Obj *obj = obj_new(ObjVector);
-  obj->as.vector.items = mem_calloc(size, sizeof(Obj));
-  obj->as.vector.size = size;
-  return obj;
-}
-
-void obj_free(Obj *obj) {
-  switch (obj->kind) {
-    case ObjString:
-    case ObjSymbol:
-      free(obj->as.string);
-      break;
-    case ObjCell:
-      obj_free(obj->as.cell.car);
-      obj_free(obj->as.cell.cdr);
-      break;
-    case ObjClosure:
-      obj_free(obj->as.closure.params);
-      obj_free(obj->as.closure.body);
-      break;
-    case ObjVector:
-      free(obj->as.vector.items);
-    default:
-      break;
-  }
-  free(obj);
+cell *syO_port(SchemeY *s, FILE *stream, char *mode) {
+  cell *p = syM_alloc(s, sizeof(cell));
+  p->kind = TyPort;
+  p->as.port.stream = stream;
+  strncpy(p->as.port.mode, mode, 2);
+  return p;
 }
