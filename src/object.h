@@ -17,10 +17,10 @@ typedef cell *(ffun)(struct SchemeY *, cell *);
 
 struct cell {
   enum {
-    TyInteger = 1, TyReal, /* TyRational, TyComplex, */
+    TyNil, TyInteger, TyReal, /* TyRational, TyComplex, */
     TyBoolean, TyCharacter, TyString, TySymbol, TyFFun,
-    TyClosure, TyEnv, TyPair, TyVector, TyTable, TyPort
-  } kind;  
+    TyClosure, TyPair, TyVector, TyTable, TyPort
+  } kind;
   union {
     long integer;
     double real;
@@ -31,7 +31,7 @@ struct cell {
     ffun *ffun;
     struct { cell *car, *cdr; } pair;
     struct { cell *items; unsigned int length, size; } vector;
-    struct { FILE *stream; char mode[2]; } port;
+    struct { FILE *stream; char mode[3]; } port;
   } as;
 };
 
@@ -48,7 +48,6 @@ cell *syO_vector    (SchemeY *s, unsigned int size);
 cell *syO_table    (SchemeY *s, unsigned int size);
 cell *syO_port      (SchemeY *s, FILE *stream, char *mode);
 
-
 // #define initobj(o,k) ((o)->kind = k, unmark(o))
 
 // #define setint(o,i)      (initobj(o, TyInteger), (o)->as.integer = (i))
@@ -59,5 +58,10 @@ cell *syO_port      (SchemeY *s, FILE *stream, char *mode);
 // #define setcons(o,a,d)   (initobj(o, TyPair), car(o) = (a), cdr(o) = (d))
 // #define setvector(o,v,s) (initobj(o, TyVector), (o)->as.vector.items=v,\
 //                           (o)->as.vector.len = 0, (o)->as.vector.size = s)
+
+cell *syO_read(SchemeY *s, cell *arg);
+
+void syO_print(cell *obj);
+cell *syO_write(SchemeY *s, cell *args);
 
 #endif

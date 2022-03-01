@@ -210,7 +210,7 @@ static const char *err_msgs[] = {
 };
 
 static void reader_init(SchemeY *s, SyReader *r, cell *port) {
-  r->stream = (port ? port : s->input_port)->as.port.stream;
+  r->stream = port->as.port.stream;
   r->ch = (r->stream == stdin) ? '\n' : EOF;
   r->bp = 0;
   r->lineno = 1;
@@ -224,10 +224,10 @@ static void read_error(SyReader *r) {
   printf("Line %zu, at \"%s\"\n", r->lineno, r->buf);
 }
 
-// Parse the next expression.
-cell *syR_read(SchemeY *s, cell *port) {
+// Read the next expression.
+cell *syR_read(SchemeY *s, cell *arg) {
   SyReader r;
-  reader_init(s, &r, port);
+  reader_init(s, &r, arg ? car(arg) : s->input_port);
   next(&r);
   cell *expr = parse_expr(&r);
   if (r.ch == EOF)
@@ -236,6 +236,6 @@ cell *syR_read(SchemeY *s, cell *port) {
     read_error(&r);
     return NULL;
   }
-  // s->heap = syO_cons(expr, s->heap);  // add expression to heap
+  // add expression to heap/stack
   return expr;
 }

@@ -16,8 +16,8 @@
 
 typedef struct Heap {
   void *from, *to;  // semi-spaces
-  void *head;  // free memory head
-  size_t size;  // half-size
+  void *next;  // free memory head
+  size_t size;  // half-size, in bytes
 } Heap;
 
 Heap *syM_new(size_t size);

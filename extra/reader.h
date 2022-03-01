@@ -11,7 +11,7 @@
 #include <stdlib.h>
 
 // TODO: parse character literals + reserved symbols.
-// add read objects to the stack for GC.
+// TODO: add read objects to the stack to prevent gc.
 
 typedef struct SyReader {
   FILE *stream;  // input stream
@@ -26,6 +26,6 @@ typedef struct SyReader {
   SchemeY *s;
 } SyReader;
 
-cell *syR_read(SchemeY *s, cell *port);
+cell *syR_read(SchemeY *s, cell *arg);
 
 #endif

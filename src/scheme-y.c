@@ -1,7 +1,6 @@
 #include "scheme-y.h"
 #include "object.h"
-#include "base.h"
-#include "reader.h"
+#include "builtins.h"
 #include "state.h"
 
 #include <stdio.h>
@@ -12,21 +11,26 @@ int main(int argc, char **argv) {
   SchemeY s;
   syS_init(&s);
 
+  cell *add = syS_intern(&s, "+");
+  cell *addfn = syS_lookup(&s, add);
+  cdr(addfn) = syO_ffun(&s, syB_add);
+
+  cell *x = syS_intern(&s, "x");
+  cell *xv = syS_lookup(&s, x);
+  cdr(xv) = syO_integer(&s, 12);
+
   if (argc == 1) {  // start REPL
     for (;;) {
-      cell *expr = syR_read(&s, NULL);
-      // cell *res = eval(expr, e);
+      cell *expr = syO_read(&s, NULL);
+      cell *res = syS_eval(&s, expr);
 
-      if (expr) {
-        printf("=> ");
-        print_expr(expr);
-        fputc('\n', stdout);
-      }
+      printf("=> ");
+      syO_print(res);
     }
   }
   // else if (argc == 2) {  // open file (TODO: multiple files)
   //   FILE *fp = fopen(argv[1], "r");
-  //   if (fp == NULL) {
+  //   if (!fp) {
   //     perror("Cannot open file");
   //     return 1;
   //   }
@@ -36,11 +40,11 @@ int main(int argc, char **argv) {
   //     .marked = true,
   //     .as.port = {.stream = fp, .mode = "r"}
   //   };
-  //   cell *expr = syR_read(&s, &port);
+  //   cell *expr = syR_parse(&s, &port);
   //   // cell *res = eval(expr, e);
   //   if (expr) {
   //     printf("=> ");
-  //     print_expr(expr);
+  //     write_obj(expr);
   //     fputc('\n', stdout);
   //   }
   //   fclose(fp);

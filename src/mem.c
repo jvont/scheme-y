@@ -1,13 +1,14 @@
 #include "mem.h"
 #include "state.h"
 
+#include <stdio.h>
 #include <string.h>
 
-// Create a new heap with a half-size of size cells.
+// Create a new heap with a half-size of size bytes.
 Heap *syM_new(size_t size) {
   Heap *h = malloc(sizeof(Heap));
   if (!h) exit(1);
-  h->from = h->head = malloc(2 * size * sizeof(cell));
+  h->from = h->next = malloc(2 * size);
   if (!h->from) exit(1);
   h->to = h->from + size;
   h->size = size;
@@ -22,16 +23,16 @@ void syM_free(Heap *h) {
 // Allocate n bytes of memory.
 void *syM_alloc(SchemeY *s, size_t n) {
   Heap *h = s->heap;
-  if (h->head + n >= h->from + h->size) {
+  if (h->next + n >= h->from + h->size) {
     syM_gc(s);
-    if (h->head + n >= h->from + h->size) {
+    if (h->next + n >= h->from + h->size) {
       // syH_resize(s);
-      perror("out of memory!");
+      printf("out of memory!");
       exit(1);
     }
   }
-  void *p = h->head;
-  h->head += n;
+  void *p = h->next;
+  h->next += n;
   return p;
 }
 
@@ -57,21 +58,42 @@ char *syM_strndup(SchemeY *s, char *src, size_t n) {
 
 // }
 
-static void forward(Heap *h, void **p) {
-  // if ((*p)->kind != TyPair) return;
+#define isfrom(h,c) ((c) >= (h)->from && (c) < (h)->from + (h)->size)
 
-  // void *obj = *p;
-  // void *fwd = car(obj);
-  
-  // if(h->from <= fwd && fwd < h->from + h->size) {
-  //   *p = fwd;
-  // }
-  // else {
-  //   void *c = h->head++;
-  //   *c = *obj;
-  //   car(obj) = c;
-  //   *p = c;
-  // }
+// Forward references to the to-space.
+static void forward(Heap *h, cell **p) {
+  cell *obj = *p;
+  cell *next = h->next;
+  if (!obj)
+    return;
+  else switch (obj->kind) {
+    case TyString:
+    case TySymbol:
+
+      break;
+    case TyClosure:
+    case TyPair:
+
+      break;
+    case TyVector:
+    case TyTable:
+
+      break;
+    default:
+
+      break;
+  }
+
+  void *fwd = car(obj);
+  if (isfrom(h,fwd))
+    *p = fwd;
+  else {  // TODO: handle vectors, strings, etc.
+    cell *next = h->next;
+    h->next += sizeof(cell);
+    *next = *obj;
+    car(obj) = next;
+    *p = next;
+  }
 }
 
 void syM_gc(SchemeY *s) {
@@ -81,10 +103,9 @@ void syM_gc(SchemeY *s) {
   h->from = h->to;
   h->to = swap;
 
-  // cell *scn = h->head = h->from;
-
-  // forward(heap, &(heap->root));
-  // for(; scn != heap->head; scn++) {
+  cell *scn = h->next = h->from;
+  forward(h, &(s->global_env));
+  // for(; scn != heap->next; scn++) {
   //   forward(heap, &(scn->car));
   //   forward(heap, &(scn->cdr));
   // }
