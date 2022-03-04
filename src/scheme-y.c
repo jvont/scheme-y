@@ -8,8 +8,6 @@
 #include <string.h>
 
 int main(int argc, char **argv) {
-  
-
   SchemeY s;
   syS_init(&s);
 

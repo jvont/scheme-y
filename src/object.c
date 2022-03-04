@@ -14,58 +14,58 @@
 // ---------------------------------------------------------------------------
 
 cell_t *syO_integer(SchemeY *s, long integer) {
-  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  cell_t *p = syM_alloc(s);
   sett(p, INTEGER);
   getv(p).integer = integer;
   return p;
 }
 
 cell_t *syO_real(SchemeY *s, double real) {
-  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  cell_t *p = syM_alloc(s);
   sett(p, REAL);
   getv(p).real = real;
   return p;
 }
 
 cell_t *syO_character(SchemeY *s, int character) {
-  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  cell_t *p = syM_alloc(s);
   sett(p, CHARACTER);
   getv(p).character = character;
   return p;
 }
 
 cell_t *syO_string(SchemeY *s, char *string) {
-  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  cell_t *p = syM_alloc(s);
   sett(p, STRING);
   getv(p).string = syM_strdup(s, string);
   return p;
 }
 
 cell_t *syO_symbol(SchemeY *s, char *symbol) {
-  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  cell_t *p = syM_alloc(s);
   sett(p, SYMBOL);
   getv(p).string = syM_strdup(s, symbol);
   return p;
 }
 
 cell_t *syO_proc(SchemeY *s, proc_t *proc) {
-  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  cell_t *p = syM_alloc(s);
   sett(p, PROC);
   getv(p).proc = proc;
   return p;
 }
 
 cell_t *syO_cons(SchemeY *s, cell_t *car, cell_t *cdr) {
-  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  cell_t *p = syM_alloc(s);
   car(p) = car;
   cdr(p) = cdr;
   return p;
 }
 
 cell_t *syO_vector(SchemeY *s, unsigned int size) {
-  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  cell_t *p = syM_alloc(s);
   sett(p, VECTOR);
-  getv(p).vector = syM_alloc(s, sizeof(vector_t));
+  getv(p).vector = syM_malloc(s, sizeof(vector_t));
   getv(p).vector->items = syM_calloc(s, size, sizeof(cell_t));
   getv(p).vector->len = 0;
   getv(p).vector->size = size;
@@ -73,9 +73,9 @@ cell_t *syO_vector(SchemeY *s, unsigned int size) {
 }
 
 cell_t *syO_table(SchemeY *s, unsigned int size) {
-  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  cell_t *p = syM_alloc(s);
   sett(p, VECTOR);
-  getv(p).vector = syM_alloc(s, sizeof(vector_t));
+  getv(p).vector = syM_malloc(s, sizeof(vector_t));
   getv(p).vector->items = syM_calloc(s, size, sizeof(cell_t));
   getv(p).vector->len = 0;
   getv(p).vector->size = size;
@@ -85,7 +85,7 @@ cell_t *syO_table(SchemeY *s, unsigned int size) {
 }
 
 cell_t *syO_port(SchemeY *s, FILE *stream, char *mode) {
-  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  cell_t *p = syM_alloc(s);
   sett(p, PORT);
   getv(p).port = stream;
   return p;

@@ -20,8 +20,15 @@ void syM_free(Heap *h) {
   free(h);
 }
 
-// Allocate n bytes of memory.
-void *syM_alloc(SchemeY *s, size_t n) {
+// Allocate a single cell.
+cell_t *syM_alloc(SchemeY *s) {
+  return syM_malloc(s, sizeof(cell_t));
+}
+
+// Allocate size bytes of cell-aligned memory.
+void *syM_malloc(SchemeY *s, size_t size) {
+  if (!size) return NULL;
+  size_t n = (size + sizeof(cell_t) - 1) / sizeof(cell_t);
   Heap *h = s->heap;
   if (h->next + n >= h->from + h->size) {
     syM_gc(s);
@@ -31,15 +38,15 @@ void *syM_alloc(SchemeY *s, size_t n) {
       exit(1);
     }
   }
-  void *p = h->next;
+  cell_t *p = h->next;
   h->next += n;
   return p;
 }
 
-// Get an array of n cell_ts, setting their bytes to zero.
+// Get an array of n objects of size bytes, setting their bytes to zero.
 void *syM_calloc(SchemeY *s, size_t n, size_t size) {
-  void *p = syM_alloc(s, n * size);
-  return memset(p, 0, n * size);
+  void *p = syM_malloc(s, n * size);
+  return !p ? NULL : memset(p, 0, n * size);
 }
 
 // Duplicate a null-terminated string.
@@ -49,7 +56,7 @@ char *syM_strdup(SchemeY *s, char *src) {
 
 // Duplicate a string of length n (null character excluded).
 char *syM_strndup(SchemeY *s, char *src, size_t n) {
-  char *dest = syM_alloc(s, n + 1);
+  char *dest = syM_malloc(s, n + 1);
   return strcpy(dest, src);
 }
 
@@ -84,11 +91,10 @@ static void forward(Heap *h, cell_t **p) {
   }
 
   void *fwd = car(obj);
-  if (isfrom(h,fwd))
+  if (isfrom(h,(cell_t *)fwd))
     *p = fwd;
   else {  // TODO: handle vectors, strings, etc.
-    cell_t *next = h->next;
-    h->next += sizeof(cell_t);
+    cell_t *next = h->next++;
     *next = *obj;
     car(obj) = next;
     *p = next;
