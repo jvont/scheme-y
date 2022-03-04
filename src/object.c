@@ -48,10 +48,10 @@ cell_t *syO_symbol(SchemeY *s, char *symbol) {
   return p;
 }
 
-cell_t *syO_proc(SchemeY *s, proc_t *proc) {
+cell_t *syO_ffun(SchemeY *s, ffun_t *ffun) {
   cell_t *p = syM_alloc(s);
-  sett(p, PROC);
-  getv(p).proc = proc;
+  sett(p, FFUN);
+  getv(p).ffun = ffun;
   return p;
 }
 
@@ -62,7 +62,7 @@ cell_t *syO_cons(SchemeY *s, cell_t *car, cell_t *cdr) {
   return p;
 }
 
-cell_t *syO_vector(SchemeY *s, unsigned int size) {
+cell_t *syO_vector(SchemeY *s, size_t size) {
   cell_t *p = syM_alloc(s);
   sett(p, VECTOR);
   getv(p).vector = syM_malloc(s, sizeof(vector_t));
@@ -72,7 +72,7 @@ cell_t *syO_vector(SchemeY *s, unsigned int size) {
   return p;
 }
 
-cell_t *syO_table(SchemeY *s, unsigned int size) {
+cell_t *syO_table(SchemeY *s, size_t size) {
   cell_t *p = syM_alloc(s);
   sett(p, VECTOR);
   getv(p).vector = syM_malloc(s, sizeof(vector_t));
@@ -326,9 +326,9 @@ static void read_error(SyReader *r) {
 }
 
 // Read the next expression.
-cell_t *syO_read(SchemeY *s, cell_t *arg) {
+cell_t *syO_read(SchemeY *s, cell_t *port) {
   SyReader r;
-  reader_init(s, &r, arg ? car(arg) : s->input_port);
+  reader_init(s, &r, port ? car(port) : s->input_port);
   next(&r);
   cell_t *expr = parse_expr(&r);
   if (r.ch == EOF)
@@ -380,9 +380,6 @@ static void write_obj(cell_t *obj, FILE *stream) {
     fputc(')', stream);
   }
   else switch (gett(obj)) {
-    case NIL:
-      fprintf(stream, "()");
-      break;
     case INTEGER:
       fprintf(stream, "%ld", getv(obj).integer);
       break;
@@ -403,8 +400,8 @@ static void write_obj(cell_t *obj, FILE *stream) {
     case SYMBOL:
       fprintf(stream, "%s", getv(obj).string);
       break;
-    case PROC:
-      fprintf(stream, "<builtin-procedure>");
+    case FFUN:
+      fprintf(stream, "<foreign-procedure>");
       break;
     case CLOSURE:
       fprintf(stream, "<closure>");

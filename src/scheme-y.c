@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
 
   cell_t *add = syS_intern(&s, "+");
   cell_t *addfn = syS_lookup(&s, add);
-  cdr(addfn) = syO_proc(&s, syB_add);
+  cdr(addfn) = syO_ffun(&s, syB_add);
 
   cell_t *x = syS_intern(&s, "x");
   cell_t *xv = syS_lookup(&s, x);

@@ -80,9 +80,9 @@ cell_t *syS_eval(SchemeY *s, cell_t *expr) {
     cell_t *p = syS_eval(s, car(expr));
     if (!p) 
       return NULL;
-    else if (istype(p, PROC)) {  // foreign-func
+    else if (istype(p, FFUN)) {  // foreign-func
       cell_t *args = cdr(expr);  // eval_list(cdr(expr));
-      return getv(p).proc(s, args);
+      return getv(p).ffun(s, args);
     }
     else return NULL;
   }

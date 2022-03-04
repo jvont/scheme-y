@@ -16,21 +16,20 @@
 
 typedef union cell cell_t;
 
-typedef cell_t *(proc_t)(SchemeY *, cell_t *);
+typedef cell_t *(ffun_t)(SchemeY *, cell_t *);
 
 typedef struct vector {
   cell_t *items;
-  unsigned int len, size;
+  size_t len, size;
 } vector_t;
 
 enum {
-  NIL,
-  INTEGER,
+  INTEGER = 1,
   REAL,
   CHARACTER,
   STRING,
   SYMBOL,
-  PROC,
+  FFUN,
   CLOSURE,
   VECTOR,
   TABLE,
@@ -49,7 +48,7 @@ union cell {
       float real;
       int character;
       char *string;
-      proc_t *proc;
+      ffun_t *ffun;
       vector_t *vector;
       FILE *port;
     } as;
@@ -60,7 +59,7 @@ union cell {
 #define getv(c) ((c)->atom.as)
 
 #define istype(c,t) (gett(c) == (t))
-#define iscons(c) (gett(c) > 255)
+#define iscons(c) (gett(c) > 255 || car(c) == NULL)
 
 #define sett(c,t) (gett(c) = (t))
 #define setv(c,v) (getv(c) = (v))
@@ -81,10 +80,10 @@ cell_t *syO_real      (SchemeY *s, double real);
 cell_t *syO_character (SchemeY *s, int character);
 cell_t *syO_string    (SchemeY *s, char *string);
 cell_t *syO_symbol    (SchemeY *s, char *symbol);
-cell_t *syO_proc      (SchemeY *s, proc_t *proc);
+cell_t *syO_ffun      (SchemeY *s, ffun_t *ffun);
 cell_t *syO_cons      (SchemeY *s, cell_t *car, cell_t *cdr);
-cell_t *syO_vector    (SchemeY *s, unsigned int size);
-cell_t *syO_table    (SchemeY *s, unsigned int size);
+cell_t *syO_vector    (SchemeY *s, size_t size);
+cell_t *syO_table     (SchemeY *s, size_t size);
 cell_t *syO_port      (SchemeY *s, FILE *stream, char *mode);
 
 // #define initobj(o,k) ((o)->kind = k, unmark(o))
@@ -98,7 +97,7 @@ cell_t *syO_port      (SchemeY *s, FILE *stream, char *mode);
 // #define setvector(o,v,s) (initobj(o, TyVector), (o)->as.vector.items=v,
 //                           (o)->as.vector.len = 0, (o)->as.vector.size = s)
 
-cell_t *syO_read(SchemeY *s, cell_t *arg);
+cell_t *syO_read(SchemeY *s, cell_t *port);
 
 void syO_print(cell_t *obj);
 cell_t *syO_write(SchemeY *s, cell_t *args);
