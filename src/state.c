@@ -72,21 +72,27 @@ cell_t *apply(SchemeY *s, cell_t *args) {
   // }
 }
 
+cell_t *eval_list(SchemeY *s, cell_t *args) {
+  cell_t *first = syS_eval(s, car(args));
+  cell_t *rest = cdr(args) ? eval_list(s, cdr(args)) : NULL;
+  return syO_cons(s, first, rest);
+}
+
 // Evaluate an expression.
 cell_t *syS_eval(SchemeY *s, cell_t *expr) {
   if (!expr)  // empty
     return NULL;
   else if (iscons(expr)) {
     cell_t *p = syS_eval(s, car(expr));
-    if (!p) 
+    if (!p)
       return NULL;
-    else if (istype(p, FFUN)) {  // foreign-func
-      cell_t *args = cdr(expr);  // eval_list(cdr(expr));
+    else if (gett(p) == FFUN) {  // foreign-func
+      cell_t *args = eval_list(s, cdr(expr));
       return getv(p).ffun(s, args);
     }
     else return NULL;
   }
-  else if (istype(expr, SYMBOL))
+  else if (gett(expr) == SYMBOL)
     return cdr(syS_lookup(s, expr));
   else
     return expr;

@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+static cell_t *syB_quote(SchemeY *s, cell_t *args) {
+  return args;
+}
+
 int main(int argc, char **argv) {
   SchemeY s;
   syS_init(&s);
@@ -15,9 +19,13 @@ int main(int argc, char **argv) {
   cell_t *addfn = syS_lookup(&s, add);
   cdr(addfn) = syO_ffun(&s, syB_add);
 
+  cell_t *quote = syS_intern(&s, "quote");
+  cell_t *qfun = syS_lookup(&s, quote);
+  cdr(qfun) = syO_ffun(&s, syB_quote);
+
   cell_t *x = syS_intern(&s, "x");
   cell_t *xv = syS_lookup(&s, x);
-  cdr(xv) = syO_integer(&s, 12);
+  cdr(xv) = syO_integer(&s, 42);
 
   if (argc == 1) {  // start REPL
     for (;;) {

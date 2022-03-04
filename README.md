@@ -10,7 +10,7 @@
 
 <br>
 
-Scheme-y is yet another implementation of Scheme. The main objective of this project is to create a full Scheme interpreter, prioritizing code readability and simplicity over performance. It is broken up into the following parts, in recommended reading order:
+Scheme-y is an incomplete implementation of Scheme. The main objective of this project is to create a minimal Scheme interpreter in C, making it possible to implement all remaining procedures in Scheme itself. It is broken up into the following parts (in recommended reading order):
 
 `object` - Scheme's object model. Contains `read` and `write` operations for parsing and outputting object representations.
 

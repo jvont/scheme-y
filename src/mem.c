@@ -73,7 +73,7 @@ static void forward(Heap *h, cell_t **p) {
   cell_t *next = h->next;
   if (!obj)
     return;
-  else if (iscons(obj) || istype(obj, CLOSURE)) {
+  else if (iscons(obj) || gett(obj) == CLOSURE) {
 
   }
   else switch (gett(obj)) {
