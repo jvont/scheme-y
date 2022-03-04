@@ -36,7 +36,7 @@ void *syM_alloc(SchemeY *s, size_t n) {
   return p;
 }
 
-// Get an array of n cells, setting their bytes to zero.
+// Get an array of n cell_ts, setting their bytes to zero.
 void *syM_calloc(SchemeY *s, size_t n, size_t size) {
   void *p = syM_alloc(s, n * size);
   return memset(p, 0, n * size);
@@ -61,22 +61,21 @@ char *syM_strndup(SchemeY *s, char *src, size_t n) {
 #define isfrom(h,c) ((c) >= (h)->from && (c) < (h)->from + (h)->size)
 
 // Forward references to the to-space.
-static void forward(Heap *h, cell **p) {
-  cell *obj = *p;
-  cell *next = h->next;
+static void forward(Heap *h, cell_t **p) {
+  cell_t *obj = *p;
+  cell_t *next = h->next;
   if (!obj)
     return;
-  else switch (obj->kind) {
-    case TyString:
-    case TySymbol:
+  else if (iscons(obj) || istype(obj, CLOSURE)) {
+
+  }
+  else switch (gett(obj)) {
+    case STRING:
+    case SYMBOL:
 
       break;
-    case TyClosure:
-    case TyPair:
-
-      break;
-    case TyVector:
-    case TyTable:
+    case VECTOR:
+    case TABLE:
 
       break;
     default:
@@ -88,8 +87,8 @@ static void forward(Heap *h, cell **p) {
   if (isfrom(h,fwd))
     *p = fwd;
   else {  // TODO: handle vectors, strings, etc.
-    cell *next = h->next;
-    h->next += sizeof(cell);
+    cell_t *next = h->next;
+    h->next += sizeof(cell_t);
     *next = *obj;
     car(obj) = next;
     *p = next;
@@ -99,11 +98,11 @@ static void forward(Heap *h, cell **p) {
 void syM_gc(SchemeY *s) {
   Heap *h = s->heap;
 
-  cell *swap = h->from;
+  cell_t *swap = h->from;
   h->from = h->to;
   h->to = swap;
 
-  cell *scn = h->next = h->from;
+  cell_t *scn = h->next = h->from;
   forward(h, &(s->global_env));
   // for(; scn != heap->next; scn++) {
   //   forward(heap, &(scn->car));

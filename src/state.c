@@ -6,8 +6,9 @@
 #include <string.h>
 
 void syS_init(SchemeY *s) {
-  s->heap = syM_new(HEAP_SIZE * sizeof(cell));
+  s->heap = syM_new(HEAP_SIZE * sizeof(cell_t));
   s->global_env = syO_table(s, GLOBAL_ENV_SIZE);
+  s->env = syO_cons(s, s->global_env, NULL);
   s->input_port = syO_port(s, stdin, "r");
   s->output_port = syO_port(s, stdin, "w");
 }
@@ -28,11 +29,11 @@ static unsigned int hash(const char *s) {
 
 // Lookup a given variable and return its entry, or NULL if not found.
 // FUTURE: convert to hash-table-eq/get
-cell *syS_lookup(SchemeY *s, cell *var) {
-  cell *t = s->global_env;
-  unsigned int size = t->as.vector.size;
-  unsigned int i = hash(var->as.string) % size;
-  cell *ev = t->as.vector.items;
+cell_t *syS_lookup(SchemeY *s, cell_t *var) {
+  cell_t *t = s->global_env;
+  unsigned int size = getv(t).vector->size;
+  unsigned int i = hash(getv(var).string) % size;
+  cell_t *ev = getv(t).vector->items;
   for (; car(ev + i); i = (i + 1) % size) {
     if (car(ev + i) == var)
       return ev + i;
@@ -41,38 +42,52 @@ cell *syS_lookup(SchemeY *s, cell *var) {
 }
 
 // Find/store a symbol, returning its cell.
-cell *syS_intern(SchemeY *s, char *sym) {
-  cell *t = s->global_env;
-  unsigned int size = t->as.vector.size;
+cell_t *syS_intern(SchemeY *s, char *sym) {
+  cell_t *t = s->global_env;
+  unsigned int size = getv(t).vector->size;
   unsigned int i = hash(sym) % size;
-  cell *ev = t->as.vector.items;
+  cell_t *ev = getv(t).vector->items;
   for (; car(ev + i); i = (i + 1) % size) {
-    if (strcmp(sym, car(ev + i)->as.string) == 0)
+    if (strcmp(sym, getv(car(ev + i)).string) == 0)
       return car(ev + i);
   }
   return (car(ev + i) = syO_symbol(s, sym));
 }
 
-// cell *apply(SchemeY *s, cell *args) {
-//   cell *fun = car(args);
-//   cell *body = cdr(args);
-// }
+cell_t *map(SchemeY *s, cell_t *args) {
+  // check arity
+  cell_t *fn = car(args);
+  for (args = cdr(args); cdr(args); args = cdr(args)) {
+
+  }
+}
+
+cell_t *apply(SchemeY *s, cell_t *args) {
+  cell_t *fn = car(args);
+  cell_t *body = cdr(args);
+  // switch (fn->kind) {
+  //   case TyFFun:
+  //   case TyClosure:
+  //   default:
+  // }
+}
 
 // Evaluate an expression.
-cell *syS_eval(SchemeY *s, cell *expr) {
+cell_t *syS_eval(SchemeY *s, cell_t *expr) {
   if (!expr)  // empty
     return NULL;
-  else if (expr->kind == TySymbol)  // lookup
-    return cdr(syS_lookup(s, expr));
-  else if (expr->kind == TyPair) {  // application
-    cell *p = syS_eval(s, car(expr));
-    if (!p) return NULL;
-    cell *args = eval_list(cdr(expr));
-
-    if (p->kind == TyFFun)
-      return p->as.ffun(s, args);
-    else
+  else if (iscons(expr)) {
+    cell_t *p = syS_eval(s, car(expr));
+    if (!p) 
       return NULL;
+    else if (istype(p, PROC)) {  // foreign-func
+      cell_t *args = cdr(expr);  // eval_list(cdr(expr));
+      return getv(p).proc(s, args);
+    }
+    else return NULL;
   }
-  else return expr;  // simple
+  else if (istype(expr, SYMBOL))
+    return cdr(syS_lookup(s, expr));
+  else
+    return expr;
 }

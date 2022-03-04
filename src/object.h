@@ -1,5 +1,10 @@
 /*
-** Scheme's object representation.
+** Scheme object representation.
+** Every scheme object is either an atom or cons cell. Atoms are tagged
+** unions, while cons cells contain two pointers (car and cdr) to other
+** Scheme objects. An atom's tag shares space with the car pointer of
+** the cons cell, relying on the assumption that memory addresses will
+** never reside within the first byte of the memory space.
 */
 #ifndef _SY_OBJECT_H
 #define _SY_OBJECT_H
@@ -7,46 +12,80 @@
 #include "scheme-y.h"
 
 #include <stdio.h>
-#include <stdbool.h>
+#include <stdlib.h>
 
-#define car(c) ((c)->as.pair.car)
-#define cdr(c) ((c)->as.pair.cdr)
+typedef union cell cell_t;
 
-typedef struct cell cell;
-typedef cell *(ffun)(struct SchemeY *, cell *);
+typedef cell_t *(proc_t)(SchemeY *, cell_t *);
 
-struct cell {
-  enum {
-    TyNil, TyInteger, TyReal, /* TyRational, TyComplex, */
-    TyBoolean, TyCharacter, TyString, TySymbol, TyFFun,
-    TyClosure, TyPair, TyVector, TyTable, TyPort
-  } kind;
-  union {
-    long integer;
-    double real;
-    /* struct { long n; long d; } rational; */
-    /* struct { double r; double i; } complex; */
-    int character;
-    char *string;
-    ffun *ffun;
-    struct { cell *car, *cdr; } pair;
-    struct { cell *items; unsigned int length, size; } vector;
-    struct { FILE *stream; char mode[3]; } port;
-  } as;
+typedef struct vector {
+  cell_t *items;
+  unsigned int len, size;
+} vector_t;
+
+enum {
+  NIL,
+  INTEGER,
+  REAL,
+  CHARACTER,
+  STRING,
+  SYMBOL,
+  PROC,
+  CLOSURE,
+  VECTOR,
+  TABLE,
+  PORT
 };
 
-cell *syO_kind (SchemeY *s, int kind);
+union cell {
+  struct {
+    cell_t *car;
+    cell_t *cdr;
+  } cons;
+  struct {
+    size_t type;
+    union {
+      long integer;
+      float real;
+      int character;
+      char *string;
+      proc_t *proc;
+      vector_t *vector;
+      FILE *port;
+    } as;
+  } atom;
+};
 
-cell *syO_integer   (SchemeY *s, long integer);
-cell *syO_real      (SchemeY *s, double real);
-cell *syO_character (SchemeY *s, int character);
-cell *syO_string    (SchemeY *s, char *string);
-cell *syO_symbol    (SchemeY *s, char *symbol);
-cell *syO_ffun      (SchemeY *s, ffun *ffun);
-cell *syO_cons      (SchemeY *s, cell *car, cell *cdr);
-cell *syO_vector    (SchemeY *s, unsigned int size);
-cell *syO_table    (SchemeY *s, unsigned int size);
-cell *syO_port      (SchemeY *s, FILE *stream, char *mode);
+#define gett(c) ((c)->atom.type)
+#define getv(c) ((c)->atom.as)
+
+#define istype(c,t) (gett(c) == (t))
+#define iscons(c) (gett(c) > 255)
+
+#define sett(c,t) (gett(c) = (t))
+#define setv(c,v) (getv(c) = (v))
+#define set(c,t,v) (sett(c,t), setv(c,v))
+
+#define car(c) ((c)->cons.car)
+#define cdr(c) ((c)->cons.cdr)
+
+// cell_t *cons(cell_t *car, cell_t *cdr) {
+//   cell_t *p = malloc(sizeof(cell_t));
+//   car(p) = car;
+//   cdr(p) = cdr;
+//   return p;
+// }
+
+cell_t *syO_integer   (SchemeY *s, long integer);
+cell_t *syO_real      (SchemeY *s, double real);
+cell_t *syO_character (SchemeY *s, int character);
+cell_t *syO_string    (SchemeY *s, char *string);
+cell_t *syO_symbol    (SchemeY *s, char *symbol);
+cell_t *syO_proc      (SchemeY *s, proc_t *proc);
+cell_t *syO_cons      (SchemeY *s, cell_t *car, cell_t *cdr);
+cell_t *syO_vector    (SchemeY *s, unsigned int size);
+cell_t *syO_table    (SchemeY *s, unsigned int size);
+cell_t *syO_port      (SchemeY *s, FILE *stream, char *mode);
 
 // #define initobj(o,k) ((o)->kind = k, unmark(o))
 
@@ -56,12 +95,12 @@ cell *syO_port      (SchemeY *s, FILE *stream, char *mode);
 // #define setstring(o,s)   (initobj(o, TyString), (o)->as.string = (s))
 // #define setffun(o,f)     (initobj(o, TyFFun), (o)->as.ffun = (f))
 // #define setcons(o,a,d)   (initobj(o, TyPair), car(o) = (a), cdr(o) = (d))
-// #define setvector(o,v,s) (initobj(o, TyVector), (o)->as.vector.items=v,\
+// #define setvector(o,v,s) (initobj(o, TyVector), (o)->as.vector.items=v,
 //                           (o)->as.vector.len = 0, (o)->as.vector.size = s)
 
-cell *syO_read(SchemeY *s, cell *arg);
+cell_t *syO_read(SchemeY *s, cell_t *arg);
 
-void syO_print(cell *obj);
-cell *syO_write(SchemeY *s, cell *args);
+void syO_print(cell_t *obj);
+cell_t *syO_write(SchemeY *s, cell_t *args);
 
 #endif

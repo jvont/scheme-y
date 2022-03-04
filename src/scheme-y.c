@@ -8,21 +8,23 @@
 #include <string.h>
 
 int main(int argc, char **argv) {
+  
+
   SchemeY s;
   syS_init(&s);
 
-  cell *add = syS_intern(&s, "+");
-  cell *addfn = syS_lookup(&s, add);
-  cdr(addfn) = syO_ffun(&s, syB_add);
+  cell_t *add = syS_intern(&s, "+");
+  cell_t *addfn = syS_lookup(&s, add);
+  cdr(addfn) = syO_proc(&s, syB_add);
 
-  cell *x = syS_intern(&s, "x");
-  cell *xv = syS_lookup(&s, x);
+  cell_t *x = syS_intern(&s, "x");
+  cell_t *xv = syS_lookup(&s, x);
   cdr(xv) = syO_integer(&s, 12);
 
   if (argc == 1) {  // start REPL
     for (;;) {
-      cell *expr = syO_read(&s, NULL);
-      cell *res = syS_eval(&s, expr);
+      cell_t *expr = syO_read(&s, NULL);
+      cell_t *res = syS_eval(&s, expr);
 
       printf("=> ");
       syO_print(res);
@@ -35,13 +37,13 @@ int main(int argc, char **argv) {
   //     return 1;
   //   }
   //   SchemeY s;
-  //   cell port = {
+  //   cell_t port = {
   //     .kind = TyPort,
   //     .marked = true,
   //     .as.port = {.stream = fp, .mode = "r"}
   //   };
-  //   cell *expr = syR_parse(&s, &port);
-  //   // cell *res = eval(expr, e);
+  //   cell_t *expr = syR_parse(&s, &port);
+  //   // cell_t *res = eval(expr, e);
   //   if (expr) {
   //     printf("=> ");
   //     write_obj(expr);

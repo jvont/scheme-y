@@ -11,24 +11,23 @@
 #define HEAP_SIZE 1024
 
 struct SchemeY {
-  cell *global_env;  // top-level environment
-  cell *env;  // current environment
-
-  cell *input_port;  // current input port
-  cell *output_port;  // current output port
+  cell_t *global_env;  // top-level environment
+  cell_t *env;  // environment stack
+  cell_t *input_port;  // current input port
+  cell_t *output_port;  // current output port
 
   Heap *heap;  // managed heap
-  // cell *pin;  // temporary objects (for gc)
+  // cell_t *pin;  // temporary objects (for gc)
 };
 
 void syS_init(SchemeY *s);
 void syS_shutdown(SchemeY *s);
 
-// cell *syS_addfn(SchemeY *s, cell *var, ffun *fn);
+// cell_t *syS_addfn(SchemeY *s, cell_t *var, ffun *fn);
 
-cell *syS_lookup(SchemeY *s, cell *var);
-cell *syS_intern(SchemeY *s, char *sym);
+cell_t *syS_lookup(SchemeY *s, cell_t *var);
+cell_t *syS_intern(SchemeY *s, char *sym);
 
-cell *syS_eval(SchemeY *s, cell *expr);
+cell_t *syS_eval(SchemeY *s, cell_t *expr);
 
 #endif

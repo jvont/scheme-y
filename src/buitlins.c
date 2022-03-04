@@ -10,108 +10,108 @@
 // Lists
 // ---------------------------------------------------------------------------
 
-cell *syF_car(SchemeY *s, cell *arg) { return car(car(arg)); }
-cell *syF_cdr(SchemeY *s, cell *arg) { return car(car(arg)); }
-cell *syF_cons(SchemeY *s, cell *args) { return syO_cons(s, car(args), car(cdr(args))); }
+cell_t *syF_car(SchemeY *s, cell_t *arg) { return car(car(arg)); }
+cell_t *syF_cdr(SchemeY *s, cell_t *arg) { return car(car(arg)); }
+cell_t *syF_cons(SchemeY *s, cell_t *args) { return syO_cons(s, car(args), car(cdr(args))); }
 
 // ---------------------------------------------------------------------------
 // Numbers
 // ---------------------------------------------------------------------------
 
-cell *syB_add(SchemeY *s, cell *args) {
-  cell *r = syO_integer(s, 0);
+cell_t *syB_add(SchemeY *s, cell_t *args) {
+  cell_t *r = syO_integer(s, 0);
   for (; args; args = cdr(args)) {
-    cell *a = car(args);
-    if (a->kind == TyInteger) {
-      if (r->kind == TyInteger)
-        r->as.integer += a->as.integer;
+    cell_t *a = car(args);
+    if (gett(a) == INTEGER) {
+      if (gett(r) == INTEGER)
+        getv(r).integer += getv(a).integer;
       else
-        r->as.real += (double)a->as.integer;
+        getv(r).real += (double)getv(a).integer;
     }
-    else if (a->kind == TyReal) {
-      if (r->kind == TyInteger) {
-        r->kind = TyReal;
-        r->as.real = (double)r->as.integer + a->as.real;
+    else if (gett(a) == REAL) {
+      if (gett(r) == INTEGER) {
+        gett(r) = REAL;
+        getv(r).real = (double)getv(r).integer + getv(a).real;
       }
-      else r->as.real += a->as.real;
+      else getv(r).real += getv(a).real;
     }
     else return NULL;
   }
   return r;
 }
 
-cell *syB_sub(SchemeY *s, cell *args) {
-  cell *r = syO_integer(s, 0);
+cell_t *syB_sub(SchemeY *s, cell_t *args) {
+  cell_t *r = syO_integer(s, 0);
   for (; args; args = cdr(args)) {
-    cell *a = car(args);
-    if (a->kind == TyInteger) {
-      if (r->kind == TyInteger)
-        r->as.integer -= a->as.integer;
+    cell_t *a = car(args);
+    if (gett(a) == INTEGER) {
+      if (gett(r) == INTEGER)
+        getv(r).integer -= getv(a).integer;
       else
-        r->as.real -= (double)a->as.integer;
+        getv(r).real -= (double)getv(a).integer;
     }
-    else if (a->kind == TyReal) {
-      if (r->kind == TyInteger) {
-        r->kind = TyReal;
-        r->as.real = (double)r->as.integer - a->as.real;
+    else if (gett(a) == REAL) {
+      if (gett(r) == INTEGER) {
+        gett(r) = REAL;
+        getv(r).real = (double)getv(r).integer - getv(a).real;
       }
-      else r->as.real -= a->as.real;
+      else getv(r).real -= getv(a).real;
     }
     else return NULL;
   }
   return r;
 }
 
-cell *syB_mul(SchemeY *s, cell *args) {
-  cell *r, *a = car(args);
-  if (a->kind == TyInteger)
-    r = syO_integer(s, a->as.integer);
-  else if (a->kind == TyReal)
-    r = syO_real(s, a->as.real);
+cell_t *syB_mul(SchemeY *s, cell_t *args) {
+  cell_t *r, *a = car(args);
+  if (gett(a) == INTEGER)
+    r = syO_integer(s, getv(a).integer);
+  else if (gett(a) == REAL)
+    r = syO_real(s, getv(a).real);
   else
     return NULL;
   for (args = cdr(args); args; args = cdr(args)) {
     a = car(args);
-    if (a->kind == TyInteger) {
-      if (r->kind == TyInteger)
-        r->as.integer *= a->as.integer;
+    if (gett(a) == INTEGER) {
+      if (gett(r) == INTEGER)
+        getv(r).integer *= getv(a).integer;
       else
-        r->as.real *= (double)a->as.integer;
+        getv(r).real *= (double)getv(a).integer;
     }
-    else if (a->kind == TyReal) {
-      if (r->kind == TyInteger) {
-        r->kind = TyReal;
-        r->as.real = (double)r->as.integer * a->as.real;
+    else if (gett(a) == REAL) {
+      if (gett(r) == INTEGER) {
+        gett(r) = REAL;
+        getv(r).real = (double)getv(r).integer * getv(a).real;
       }
-      else r->as.real *= a->as.real;
+      else getv(r).real *= getv(a).real;
     }
     else return NULL;
   }
   return r;
 }
 
-cell *syB_div(SchemeY *s, cell *args) {
-  cell *r, *a = car(args);
-  if (a->kind == TyInteger)
-    r = syO_integer(s, a->as.integer);
-  else if (a->kind == TyReal)
-    r = syO_real(s, a->as.real);
+cell_t *syB_div(SchemeY *s, cell_t *args) {
+  cell_t *r, *a = car(args);
+  if (gett(a) == INTEGER)
+    r = syO_integer(s, getv(a).integer);
+  else if (gett(a) == REAL)
+    r = syO_real(s, getv(a).real);
   else
     return NULL;
   for (args = cdr(args); args; args = cdr(args)) {
     a = car(args);
-    if (a->kind == TyInteger) {
-      if (r->kind == TyInteger)
-        r->as.integer /= a->as.integer;
+    if (gett(a) == INTEGER) {
+      if (gett(r) == INTEGER)
+        getv(r).integer /= getv(a).integer;
       else
-        r->as.real /= (double)a->as.integer;
+        getv(r).real /= (double)getv(a).integer;
     }
-    else if (a->kind == TyReal) {
-      if (r->kind == TyInteger) {
-        r->kind = TyReal;
-        r->as.real = (double)r->as.integer / a->as.real;
+    else if (gett(a) == REAL) {
+      if (gett(r) == INTEGER) {
+        gett(r) = REAL;
+        getv(r).real = (double)getv(r).integer / getv(a).real;
       }
-      else r->as.real /= a->as.real;
+      else getv(r).real /= getv(a).real;
     }
     else return NULL;
   }

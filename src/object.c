@@ -13,84 +13,81 @@
 // Initialization
 // ---------------------------------------------------------------------------
 
-cell *syO_integer(SchemeY *s, long integer) {
-  cell *p = syM_alloc(s, sizeof(cell));
-  p->kind = TyInteger;
-  p->as.integer = integer;
+cell_t *syO_integer(SchemeY *s, long integer) {
+  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  sett(p, INTEGER);
+  getv(p).integer = integer;
   return p;
 }
 
-cell *syO_real(SchemeY *s, double real) {
-  cell *p = syM_alloc(s, sizeof(cell));
-  p->kind = TyReal;
-  p->as.real = real;
+cell_t *syO_real(SchemeY *s, double real) {
+  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  sett(p, REAL);
+  getv(p).real = real;
   return p;
 }
 
-cell *syO_character(SchemeY *s, int character) {
-  cell *p = syM_alloc(s, sizeof(cell));
-  p->kind = TyCharacter;
-  p->as.character = character;
+cell_t *syO_character(SchemeY *s, int character) {
+  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  sett(p, CHARACTER);
+  getv(p).character = character;
   return p;
 }
 
-cell *syO_string(SchemeY *s, char *string) {
-  cell *p = syM_alloc(s, sizeof(cell));
-  p->kind = TyString;
-  p->as.string = syM_strdup(s, string);
+cell_t *syO_string(SchemeY *s, char *string) {
+  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  sett(p, STRING);
+  getv(p).string = syM_strdup(s, string);
   return p;
 }
 
-cell *syO_symbol(SchemeY *s, char *symbol) {
-  cell *p = syM_alloc(s, sizeof(cell));
-  p->kind = TySymbol;
-  p->as.string = syM_strdup(s, symbol);
+cell_t *syO_symbol(SchemeY *s, char *symbol) {
+  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  sett(p, SYMBOL);
+  getv(p).string = syM_strdup(s, symbol);
   return p;
 }
 
-cell *syO_ffun(SchemeY *s, ffun *ffun) {
-  cell *p = syM_alloc(s, sizeof(cell));
-  p->kind = TyFFun;
-  p->as.ffun = ffun;
+cell_t *syO_proc(SchemeY *s, proc_t *proc) {
+  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  sett(p, PROC);
+  getv(p).proc = proc;
   return p;
 }
 
-cell *syO_cons(SchemeY *s, cell *car, cell *cdr) {
-  cell *p = syM_alloc(s, sizeof(cell));
-  p->kind = TyPair;
-  p->as.pair.car = car;
-  p->as.pair.cdr = cdr;
+cell_t *syO_cons(SchemeY *s, cell_t *car, cell_t *cdr) {
+  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  car(p) = car;
+  cdr(p) = cdr;
   return p;
 }
 
-cell *syO_vector(SchemeY *s, unsigned int size) {
-  cell *arr = syM_calloc(s, size + 1, sizeof(cell));
-  cell *p = arr;
-  p->kind = TyVector;
-  p->as.vector.items = arr + 1;
-  p->as.vector.length = 0;
-  p->as.vector.size = size;
+cell_t *syO_vector(SchemeY *s, unsigned int size) {
+  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  sett(p, VECTOR);
+  getv(p).vector = syM_alloc(s, sizeof(vector_t));
+  getv(p).vector->items = syM_calloc(s, size, sizeof(cell_t));
+  getv(p).vector->len = 0;
+  getv(p).vector->size = size;
   return p;
 }
 
-cell *syO_table(SchemeY *s, unsigned int size) {
-  cell *arr = syM_calloc(s, size + 1, sizeof(cell));
-  cell *p = arr;
-  p->kind = TyTable;
-  p->as.vector.items = arr + 1;
-  p->as.vector.length = 0;
-  p->as.vector.size = size;
-  for (unsigned int i = 1; i < size + 1; i++)
-    arr[i].kind = TyPair;
+cell_t *syO_table(SchemeY *s, unsigned int size) {
+  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  sett(p, VECTOR);
+  getv(p).vector = syM_alloc(s, sizeof(vector_t));
+  getv(p).vector->items = syM_calloc(s, size, sizeof(cell_t));
+  getv(p).vector->len = 0;
+  getv(p).vector->size = size;
+  // for (unsigned int i = 1; i < size + 1; i++)
+  //   car(getv(p).vector->items + i) = NIL;
   return p;
 }
 
-cell *syO_port(SchemeY *s, FILE *stream, char *mode) {
-  cell *p = syM_alloc(s, sizeof(cell));
-  p->kind = TyPort;
-  p->as.port.stream = stream;
-  strncpy(p->as.port.mode, mode, 2);
-  p->as.port.mode[2] = '\0';
+cell_t *syO_port(SchemeY *s, FILE *stream, char *mode) {
+  cell_t *p = syM_alloc(s, sizeof(cell_t));
+  sett(p, PORT);
+  getv(p).port = stream;
   return p;
 }
 
@@ -165,14 +162,14 @@ static void save_lower(SyReader *r, int c) {
 }
 
 // Scan an invalid token until next delimiter.
-static cell *parse_invalid(SyReader *r) {
+static cell_t *parse_invalid(SyReader *r) {
   r->err = ErrInvalid;
   save_until(r, isdelim);
   return NULL;
 }
 
 // Number = integer | real ;
-static cell *parse_number(SyReader *r) {
+static cell_t *parse_number(SyReader *r) {
   save_until(r, isdelim);
   char *nptr = r->buf;
   char *endptr;
@@ -188,7 +185,7 @@ static cell *parse_number(SyReader *r) {
 }
 
 // String = " { ( character | escape ) - " } " ;
-static cell *parse_string(SyReader *r) {
+static cell_t *parse_string(SyReader *r) {
   next(r);
   while (r->ch != '"') {
     if (r->ch == '\\')  // string escape
@@ -204,7 +201,7 @@ static cell *parse_string(SyReader *r) {
 }
 
 // Identifier = initial { subseq } ;
-static cell *parse_identifier(SyReader *r) {
+static cell_t *parse_identifier(SyReader *r) {
   while (issubseq(r->ch)) {
     save_lower(r, r->ch);
     next(r);
@@ -216,10 +213,10 @@ static cell *parse_identifier(SyReader *r) {
   else return parse_invalid(r);
 }
 
-static cell *parse_expr(SyReader *r);
+static cell_t *parse_expr(SyReader *r);
 
 // Parse a list expression.
-static cell *parse_list(SyReader *r) {
+static cell_t *parse_list(SyReader *r) {
   skip_while(r, isspace);  // skip whitespace
   if (r->ch == ')') {
     r->depth--;
@@ -227,15 +224,15 @@ static cell *parse_list(SyReader *r) {
     return NULL;
   }
   bool dotsep = (r->ch == '.');
-  cell *obj = parse_expr(r);
-  cell *rest = parse_list(r);
+  cell_t *obj = parse_expr(r);
+  cell_t *rest = parse_list(r);
   if (dotsep && rest)
     r->err = ErrDotsep;
   return dotsep ? obj : syO_cons(r->s, obj, rest);
 }
 
 // Parse an expression.
-static cell *parse_expr(SyReader *r) {
+static cell_t *parse_expr(SyReader *r) {
   r->bp = 0;
   skip_while(r, isspace);  // skip whitespace
   if (r->ch == '(') {  // list (common)
@@ -313,8 +310,8 @@ static const char *err_msgs[] = {
   [ErrDotsep] = "invalid token following dot separator",
 };
 
-static void reader_init(SchemeY *s, SyReader *r, cell *port) {
-  r->stream = port->as.port.stream;
+static void reader_init(SchemeY *s, SyReader *r, cell_t *port) {
+  r->stream = getv(port).port;
   r->ch = (r->stream == stdin) ? '\n' : EOF;
   r->bp = 0;
   r->lineno = 1;
@@ -329,11 +326,11 @@ static void read_error(SyReader *r) {
 }
 
 // Read the next expression.
-cell *syO_read(SchemeY *s, cell *arg) {
+cell_t *syO_read(SchemeY *s, cell_t *arg) {
   SyReader r;
   reader_init(s, &r, arg ? car(arg) : s->input_port);
   next(&r);
-  cell *expr = parse_expr(&r);
+  cell_t *expr = parse_expr(&r);
   if (r.ch == EOF)
     return syS_intern(s, "#!eof");
   else if (r.err) {
@@ -348,12 +345,12 @@ cell *syO_read(SchemeY *s, cell *arg) {
 // Write
 // ---------------------------------------------------------------------------
 
-static void write_obj(cell *obj, FILE *stream);
+static void write_obj(cell_t *obj, FILE *stream);
 
-static void write_list(cell *obj, FILE *stream) {
+static void write_list(cell_t *obj, FILE *stream) {
   write_obj(car(obj), stream);
   if (cdr(obj)) {
-    if (cdr(obj)->kind == TyPair) {
+    if (iscons(cdr(obj))) {
       fputc(' ', stream);
       write_list(cdr(obj), stream);
     }
@@ -364,81 +361,82 @@ static void write_list(cell *obj, FILE *stream) {
   }
 }
 
-static void write_vector(cell *obj, FILE *stream) {
-  cell *v = obj->as.vector.items;
-  unsigned int len = obj->as.vector.length;
+static void write_vector(cell_t *obj, FILE *stream) {
+  cell_t *items = getv(obj).vector->items;
+  unsigned int len = getv(obj).vector->len;
   for (unsigned int i = 0; i < len - 1; i++) {
-    write_obj(v + i, stream);
+    write_obj(items + i, stream);
     fputc(' ', stream);
   }
-  write_obj(v + len - 1, stream);
+  write_obj(items + len - 1, stream);
 }
 
-static void write_obj(cell *obj, FILE *stream) {
+static void write_obj(cell_t *obj, FILE *stream) {
   if (!obj)
     fprintf(stream, "()");
-  else switch (obj->kind) {
-    case TyNil:
+  else if (iscons(obj)) {
+    fputc('(', stream);
+    write_list(obj, stream);
+    fputc(')', stream);
+  }
+  else switch (gett(obj)) {
+    case NIL:
       fprintf(stream, "()");
       break;
-    case TyInteger:
-      fprintf(stream, "%ld", obj->as.integer);
+    case INTEGER:
+      fprintf(stream, "%ld", getv(obj).integer);
       break;
-    case TyReal:
-      fprintf(stream, "%.3f", obj->as.real);
+    case REAL:
+      fprintf(stream, "%.3f", getv(obj).real);
       break;
-    // case TyRational:
-    // case TyComplex:
-    case TyBoolean:
-      fprintf(stream, obj->as.integer ? "#t" : "#f");
+    // case RATIONAL:
+    // case COMPLEX:
+    // case BOOLEAN:
+    //   fprintf(stream, getv(obj).integer ? "#t" : "#f");
+    //   break;
+    case CHARACTER:
+      fprintf(stream, "%c", getv(obj).character);
       break;
-    case TyCharacter:
-      fprintf(stream, "%c", obj->as.character);
-    case TyString:
-      fprintf(stream, "\"%s\"", obj->as.string);
+    case STRING:
+      fprintf(stream, "\"%s\"", getv(obj).string);
       break;
-    case TySymbol:
-      fprintf(stream, "%s", obj->as.string);
+    case SYMBOL:
+      fprintf(stream, "%s", getv(obj).string);
       break;
-    case TyFFun:
-      fprintf(stream, "<foreign-func>");
+    case PROC:
+      fprintf(stream, "<builtin-procedure>");
       break;
-    case TyClosure:
+    case CLOSURE:
       fprintf(stream, "<closure>");
-      // write_obj(obj->as.closure.body, stream);
+      // write_obj(getv(obj).closure.body, stream);
       break;
-    case TyPair:
-      fputc('(', stream);
-      write_list(obj, stream);
-      fputc(')', stream);
-      break;
-    case TyVector: {
+    case VECTOR: {
       fprintf(stream, "#(");
       write_vector(obj, stream);
       fputc(')', stream);
       break;
     }
-    case TyTable:
+    case TABLE:
       fprintf(stream, "#(");
       write_vector(obj, stream);
       fputc(')', stream);
       break;
-    case TyPort:
-      fprintf(stream, "<port-%s at %p>", obj->as.port.mode, obj->as.port.stream);
+    case PORT:
+      fprintf(stream, "<port>");
       break;
   }
 }
 
 // Print an object to stdout.
-void syO_print(cell *obj) {
+void syO_print(cell_t *obj) {
   write_obj(obj, stdout);
   fputc('\n', stdout);
 }
 
 // Write an object to given/default output port.
-cell *syO_write(SchemeY *s, cell *args) {
-  cell *port = cdr(args) ? car(cdr(args)) : s->output_port;
-  FILE *stream = port->as.port.stream;
+cell_t *syO_write(SchemeY *s, cell_t *args) {
+  cell_t *port = cdr(args) ? car(cdr(args)) : s->output_port;
+  FILE *stream = getv(port).port;
   write_obj(car(args), stream);
   fputc('\n', stream);
   return NULL;

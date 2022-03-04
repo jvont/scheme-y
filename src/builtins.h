@@ -11,9 +11,9 @@
 
 // void builtins_init(SyObj *env);
 
-cell *syB_add(SchemeY *s, cell *args);
-cell *syB_sub(SchemeY *s, cell *args);
-cell *syB_mul(SchemeY *s, cell *args);
-cell *syB_div(SchemeY *s, cell *args);
+cell_t *syB_add(SchemeY *s, cell_t *args);
+cell_t *syB_sub(SchemeY *s, cell_t *args);
+cell_t *syB_mul(SchemeY *s, cell_t *args);
+cell_t *syB_div(SchemeY *s, cell_t *args);
 
 #endif
