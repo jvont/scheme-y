@@ -7,31 +7,36 @@
 #include "object.h"
 
 #define GLOBAL_ENV_SIZE 128
-#define HEAP_SIZE 1024
+#define HEAP_SIZE 1024  // in cells
+
+typedef struct heap heap_t;
 
 enum {
   E_OK,
   E_EOF,  // unexpected EOF
   E_TOKEN,  // invalid token
-  E_PARSE,  // parse error
+  E_DOTSEP,  // invalid dot separator
+  E_RANGE,  // number out of range
 };
 
-typedef struct heap heap_t;
-
 struct SchemeY {
-  // vector_t *globals;  // top-level environment
+  /* global variables */
+  // vector_t *globals;
   cell_t *globals;  // top-level environment
   cell_t *inport;  // current input port
   cell_t *outport;  // current output port
-
+  
+  /* registers */
   cell_t *env;  // current environment stack
   cell_t *code;  // currently executing code
   cell_t *args;  // argument stack
   cell_t *acc;  // accumulator
 
+  /* managed heap */
   heap_t *heap;  // managed heap
   // cell_t *pin;  // temporary objects (for gc)
 
+  /* reader state */
   char *tbase, *tptr, *tend;  // token buffer
   int lookahead;  // lookahead character
   size_t depth, lineno;  // reader state

@@ -15,9 +15,8 @@ static int isdelim(int c) { return isspace(c) || c == '(' || c == ')' || c == ';
 static int isinitial(int c) { return isalpha(c) || strchr("!$%&*/:<=>?@^_~", c); }
 static int issubseq(int c) { return isalnum(c) || strchr("!$%&*/:<=>?@^_~+-.", c); }
 
-#define save_until(s,pred) while (!pred(s->lookahead)) { save_next(s); }
+#define save_until(s,pred) while (!pred(s->lookahead)) { save_next(s); } *s->tptr = '\0'
 #define skip_while(s,pred) while (pred(s->lookahead)) next(s)
-
 #define save_next(s) (save(s, s->lookahead), next(s))
 
 // Get user input, printing prompt to stdout.
@@ -83,6 +82,7 @@ static cell_t *parse_invalid(SchemeY *s) {
 // Number = integer | real ;
 static cell_t *parse_number(SchemeY *s) {
   save_until(s, isdelim);
+  errno = 0;  // reset errno before call
   char *nptr = s->tbase;
   char *endptr;
   long i = strtol(nptr, &endptr, 0);
@@ -108,6 +108,7 @@ static cell_t *parse_string(SchemeY *s) {
     }
     save_next(s);
   }
+  *s->tptr = '\0';
   next(s);
   return mk_string(s, s->tbase);
 }
@@ -139,7 +140,7 @@ static cell_t *parse_list(SchemeY *s) {
   cell_t *obj = parse_expr(s);
   cell_t *rest = parse_list(s);
   if (dotsep && rest)
-    s->err = E_PARSE;
+    s->err = E_DOTSEP;
   return dotsep ? obj : cons(s, obj, rest);
 }
 
@@ -219,7 +220,8 @@ static const char *err_msgs[] = {
   [E_OK] = "",
   [E_EOF] = "unexpected EOF",
   [E_TOKEN] = "invalid token",
-  [E_PARSE] = "invalid parse",
+  [E_DOTSEP] = "invalid expression following dot separator",
+  [E_RANGE] = "number is out of range",
 };
 
 static void read_error(SchemeY *s) {
@@ -227,11 +229,14 @@ static void read_error(SchemeY *s) {
   printf("Line %zu, at \"%s\"\n", s->lineno, s->tbase);
 }
 
+// set_input_port - update lineno, lookahead, etc.
+
 // Read the next expression.
 cell_t *sy_read(SchemeY *s, cell_t *port) {
   // TODO: port handling
-
+  
   next(s);
+  s->err = E_OK;
 
   cell_t *expr = parse_expr(s);
 
@@ -263,8 +268,8 @@ static void write_list(cell_t *obj, FILE *stream) {
 
 static void write_vector(cell_t *obj, FILE *stream) {
   cell_t *items = as(obj)._vector->items;
-  unsigned int len = as(obj)._vector->len;
-  for (unsigned int i = 0; i < len - 1; i++) {
+  size_t len = as(obj)._vector->len;
+  for (size_t i = 0; i < len - 1; i++) {
     write_obj(items + i, stream);
     fputc(' ', stream);
   }
@@ -284,7 +289,10 @@ static void write_obj(cell_t *obj, FILE *stream) {
       fprintf(stream, "%d", as(obj)._int);
       break;
     case T_REAL:
-      fprintf(stream, "%.3f", as(obj)._real);
+      if (as(obj)._real < 1e-3 || as(obj)._real > 1e6)
+        fprintf(stream, "%.3e", as(obj)._real);
+      else
+        fprintf(stream, "%.3f", as(obj)._real);
       break;
     // case RATIONAL:
     // case COMPLEX:
