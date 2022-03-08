@@ -44,7 +44,7 @@ union cell {
     cell_t *_cdr;
   } _cons;
   struct {
-    size_t _type;
+    size_t _type;  // _car-algined
     union {
       long _int;
       float _real;
@@ -86,16 +86,16 @@ union cell {
 #define set_table(c,v)  (type(c) = T_TABLE, as(c)._vector = (v))
 #define set_port(c,p)   (type(c) = T_PORT,   as(c)._port = (p))
 
-cell_t *cons(SchemeY *s, cell_t *_car, cell_t *_cdr);
-cell_t *mk_int(SchemeY *s, long _int);
-cell_t *mk_real(SchemeY *s, float _real);
-cell_t *mk_char(SchemeY *s, int _Char);
-cell_t *mk_string(SchemeY *s, char *string);
-cell_t *mk_symbol(SchemeY *s, char *symbol);
-cell_t *mk_ffun(SchemeY *s, ffun_t *ffun);
-vector_t *mk_vector_t(SchemeY *s, size_t _size);
-cell_t *mk_vector(SchemeY *s, size_t _size);
-cell_t *mk_table(SchemeY *s, size_t _size);
-cell_t *mk_port(SchemeY *s, FILE *_port);
+cell_t *cons(SchemeY *s, cell_t *a, cell_t *d);
+cell_t *mk_int(SchemeY *s, long i);
+cell_t *mk_real(SchemeY *s, float r);
+cell_t *mk_char(SchemeY *s, int ch);
+cell_t *mk_string(SchemeY *s, char *str);
+cell_t *mk_symbol(SchemeY *s, char *sym);
+cell_t *mk_ffun(SchemeY *s, ffun_t *f);
+vector_t *mk_vector_t(SchemeY *s, size_t sz);
+cell_t *mk_vector(SchemeY *s, size_t sz);
+cell_t *mk_table(SchemeY *s, size_t sz);
+cell_t *mk_port(SchemeY *s, FILE *p);
 
 #endif

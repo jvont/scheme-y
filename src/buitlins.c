@@ -4,19 +4,11 @@
 #include <math.h>
 #include <stdlib.h>
 
-// ---------------------------------------------------------------------------
-// Lists
-// ---------------------------------------------------------------------------
+// cell_t *sy_car(SchemeY *s, cell_t *arg) { return car(car(arg)); }
+// cell_t *sy_cdr(SchemeY *s, cell_t *arg) { return car(car(arg)); }
+// cell_t *sy_cons(SchemeY *s, cell_t *args) { return cons(s, car(args), car(cdr(args))); }
 
-cell_t *syF_car(SchemeY *s, cell_t *arg) { return car(car(arg)); }
-cell_t *syF_cdr(SchemeY *s, cell_t *arg) { return car(car(arg)); }
-cell_t *syF_cons(SchemeY *s, cell_t *args) { return cons(s, car(args), car(cdr(args))); }
-
-// ---------------------------------------------------------------------------
-// Numbers
-// ---------------------------------------------------------------------------
-
-cell_t *syB_add(SchemeY *s, cell_t *args) {
+cell_t *sy_add(SchemeY *s, cell_t *args) {
   cell_t *r = mk_int(s, 0);
   for (; args; args = cdr(args)) {
     cell_t *a = car(args);
@@ -37,7 +29,7 @@ cell_t *syB_add(SchemeY *s, cell_t *args) {
   return r;
 }
 
-cell_t *syB_sub(SchemeY *s, cell_t *args) {
+cell_t *sy_sub(SchemeY *s, cell_t *args) {
   cell_t *r = mk_int(s, 0);
   for (; args; args = cdr(args)) {
     cell_t *a = car(args);
@@ -58,7 +50,7 @@ cell_t *syB_sub(SchemeY *s, cell_t *args) {
   return r;
 }
 
-cell_t *syB_mul(SchemeY *s, cell_t *args) {
+cell_t *sy_mul(SchemeY *s, cell_t *args) {
   cell_t *r, *a = car(args);
   if (isint(a))
     r = mk_int(s, as(a)._int);
@@ -85,7 +77,7 @@ cell_t *syB_mul(SchemeY *s, cell_t *args) {
   return r;
 }
 
-cell_t *syB_div(SchemeY *s, cell_t *args) {
+cell_t *sy_div(SchemeY *s, cell_t *args) {
   cell_t *r, *a = car(args);
   if (isint(a))
     r = mk_int(s, as(a)._int);

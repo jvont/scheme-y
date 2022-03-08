@@ -7,13 +7,14 @@
 
 #include "object.h"
 
-// TODO: arity checks
+// Interface to specify argument range (min/max) and
+// test types of sub-ranges of arguments
 
 // void builtins_init(SyObj *env);
 
-cell_t *syB_add(SchemeY *s, cell_t *args);
-cell_t *syB_sub(SchemeY *s, cell_t *args);
-cell_t *syB_mul(SchemeY *s, cell_t *args);
-cell_t *syB_div(SchemeY *s, cell_t *args);
+cell_t *sy_add(SchemeY *s, cell_t *args);
+cell_t *sy_sub(SchemeY *s, cell_t *args);
+cell_t *sy_mul(SchemeY *s, cell_t *args);
+cell_t *sy_div(SchemeY *s, cell_t *args);
 
 #endif

@@ -9,25 +9,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-static cell_t *syB_quote(SchemeY *s, cell_t *args) {
+static cell_t *sy_quote(SchemeY *s, cell_t *args) {
   return args;
 }
 
 int main(int argc, char **argv) {
   SchemeY s;
-  syS_init(&s);
+  sy_init(&s);
 
-  // cell_t *add = syS_intern(&s, "+");
-  // cell_t *addfn = syS_lookup(&s, add);
-  // cdr(addfn) = mk_ffun(&s, syB_add);
-
-  // cell_t *quote = syS_intern(&s, "quote");
-  // cell_t *qfun = syS_lookup(&s, quote);
-  // cdr(qfun) = mk_ffun(&s, syB_quote);
-
-  // cell_t *x = syS_intern(&s, "x");
-  // cell_t *xv = syS_lookup(&s, x);
-  // cdr(xv) = mk_int(&s, 42);
+  sy_intern_bind(&s, "+", mk_ffun(&s, sy_add));
+  sy_intern_bind(&s, "quote", mk_ffun(&s, sy_quote));
+  sy_intern_bind(&s, "x", mk_int(&s, 42));
 
   if (argc == 1) {  // start REPL
     s.prompt = 1;
@@ -35,8 +27,9 @@ int main(int argc, char **argv) {
       s.err = E_OK;
       
       cell_t *expr = sy_read(&s, NULL);
+      cell_t *ret = sy_eval(&s, expr);
       printf("=> ");
-      print_obj(expr);
+      print_obj(ret);
     }
   }
   // else if (argc == 2) {  // open file (TODO: multiple files)

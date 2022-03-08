@@ -25,10 +25,10 @@ struct SchemeY {
   cell_t *outport;  // current output port
   
   /* registers */
-  cell_t *env;  // current environment stack
-  cell_t *code;  // currently executing code
-  cell_t *args;  // argument stack
-  cell_t *acc;  // accumulator
+  // cell_t *env;  // current environment
+  // cell_t *eval;  // evaluation stack
+  // cell_t *args;  // argument stack
+  // cell_t *acc;  // accumulator
 
   /* managed heap */
   heap_t *heap;  // managed heap
@@ -43,14 +43,17 @@ struct SchemeY {
   int err;  // error status
 };
 
-void syS_init(SchemeY *s);
-void syS_shutdown(SchemeY *s);
+void sy_init(SchemeY *s);
+void sy_shutdown(SchemeY *s);
 
 // cell_t *syS_addfn(SchemeY *s, cell_t *var, ffun *fn);
 
-cell_t *syS_lookup(SchemeY *s, cell_t *var);
-cell_t *syS_intern(SchemeY *s, char *sym);
+cell_t *sy_lookup(SchemeY *s, cell_t *var);
+cell_t *sy_bind(SchemeY *s, cell_t *var, cell_t *val);
 
-cell_t *syS_eval(SchemeY *s, cell_t *expr);
+cell_t *sy_intern(SchemeY *s, char *sym);
+cell_t *sy_intern_bind(SchemeY *s, char *sym, cell_t *val);
+
+cell_t *sy_eval(SchemeY *s, cell_t *expr);
 
 #endif

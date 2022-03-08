@@ -5,10 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-void syS_init(SchemeY *s) {
+void sy_init(SchemeY *s) {
   s->heap = syM_new(HEAP_SIZE * sizeof(cell_t));
   s->globals = mk_table(s, GLOBAL_ENV_SIZE);
-  s->env = cons(s, s->globals, NULL);
   s->inport = mk_port(s, stdin);
   s->outport = mk_port(s, stdout);
 
@@ -22,8 +21,10 @@ void syS_init(SchemeY *s) {
   s->err = E_OK;
 }
 
-void syS_shutdown(SchemeY *s) {
+void sy_shutdown(SchemeY *s) {
   syM_free(s->heap);
+  free(s->tbase);
+  s->tptr = s->tend = NULL;
 }
 
 // djb2 hash: http://www.cse.yorku.ca/~oz/hash.html
@@ -36,9 +37,8 @@ static unsigned int hash(const char *s) {
   return h;
 }
 
-// Lookup a given symbol by address and return its entry, or NULL if not found.
-// FUTURE: convert to hash-table-eq/get
-cell_t *syS_lookup(SchemeY *s, cell_t *var) {
+// Lookup a given variable by address and return its entry, or NULL if not found.
+static cell_t *sy_lookup_entry(SchemeY *s, cell_t *var) {
   vector_t *v = as(s->globals)._vector;
   unsigned int size = v->_size;
   unsigned int i = hash(as(var)._string) % size;
@@ -50,8 +50,23 @@ cell_t *syS_lookup(SchemeY *s, cell_t *var) {
   return NULL;
 }
 
-// Find/store a symbol, returning its associated item.
-cell_t *syS_intern_item(SchemeY *s, char *sym) {
+// Lookup a given variable by address and return its value, or NULL if not found.
+// FUTURE: convert to hash-table-eq/get
+cell_t *sy_lookup(SchemeY *s, cell_t *var) {
+  cell_t *e = sy_lookup_entry(s, var);
+  return (!e) ? NULL : cdr(e);
+}
+
+cell_t *sy_bind(SchemeY *s, cell_t *var, cell_t *val) {
+  cell_t *e = sy_lookup_entry(s, var);
+  if (!e)  // ERROR
+    return NULL;
+  cdr(e) = val;
+  return NULL;
+}
+
+// Find/store a symbol, returning its associated entry.
+cell_t *sy_intern_entry(SchemeY *s, char *sym) {
   vector_t *v = as(s->globals)._vector;
   unsigned int size = v->_size;
   unsigned int i = hash(sym) % size;
@@ -65,8 +80,14 @@ cell_t *syS_intern_item(SchemeY *s, char *sym) {
 }
 
 // Find/store a symbol and return it.
-cell_t *syS_intern(SchemeY *s, char *sym) {
-  return car(syS_intern_item(s, sym));
+cell_t *sy_intern(SchemeY *s, char *sym) {
+  return car(sy_intern_entry(s, sym));
+}
+
+cell_t *sy_intern_bind(SchemeY *s, char *sym, cell_t *val) {
+  cell_t *e = sy_intern_entry(s, sym);
+  cdr(e) = val;
+  return NULL;
 }
 
 cell_t *map(SchemeY *s, cell_t *args) {
@@ -88,20 +109,20 @@ cell_t *apply(SchemeY *s, cell_t *args) {
 }
 
 cell_t *eval_list(SchemeY *s, cell_t *args) {
-  cell_t *first = syS_eval(s, car(args));
+  cell_t *first = sy_eval(s, car(args));
   cell_t *rest = cdr(args) ? eval_list(s, cdr(args)) : NULL;
   return cons(s, first, rest);
 }
 
 // Evaluate an expression.
-cell_t *syS_eval(SchemeY *s, cell_t *expr) {
+cell_t *sy_eval(SchemeY *s, cell_t *expr) {
   if (!expr) return NULL;  // empty
   else if (iscons(expr)) {  // list
 
 
   // else return expr;
 
-    cell_t *p = syS_eval(s, car(expr));
+    cell_t *p = sy_eval(s, car(expr));
     if (!p)
       return NULL;
     else if (isffun(p)) {  // foreign-func
@@ -111,7 +132,7 @@ cell_t *syS_eval(SchemeY *s, cell_t *expr) {
     else return NULL;
   }
   else if (issymbol(expr))
-    return cdr(syS_lookup(s, expr));
+    return sy_lookup(s, expr);
   else
     return expr;
 }

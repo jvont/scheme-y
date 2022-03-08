@@ -121,7 +121,7 @@ static cell_t *parse_identifier(SchemeY *s) {
   }
   *s->tptr = '\0';
   if (isdelim(s->lookahead)) {
-    return syS_intern(s, s->tbase);
+    return sy_intern(s, s->tbase);
   }
   else return parse_invalid(s);
 }
@@ -178,26 +178,26 @@ static cell_t *parse_expr(SchemeY *s) {
       return parse_string(s);  // " { char | esc } "
     case '\'':
       next(s);
-      return cons(s, syS_intern(s, "quote"), cons(s, parse_expr(s), NULL));
+      return cons(s, sy_intern(s, "quote"), cons(s, parse_expr(s), NULL));
     case '`':
       next(s);
-      return cons(s, syS_intern(s, "quasiquote"), cons(s, parse_expr(s), NULL));
+      return cons(s, sy_intern(s, "quasiquote"), cons(s, parse_expr(s), NULL));
     case ',':
       next(s);
       if (s->lookahead == '@') {
         next(s);
-        return cons(s, syS_intern(s, "unquote-splicing"), cons(s, parse_expr(s), NULL));
+        return cons(s, sy_intern(s, "unquote-splicing"), cons(s, parse_expr(s), NULL));
       }
-      else return cons(s, syS_intern(s, "unquote"), cons(s, parse_expr(s), NULL));
+      else return cons(s, sy_intern(s, "unquote"), cons(s, parse_expr(s), NULL));
     case '#':
       next(s);
       switch (s->lookahead) {
         case 't':
           next(s);
-          return syS_intern(s, "#t");
+          return sy_intern(s, "#t");
         case 'f':
           next(s);
-          return syS_intern(s, "#f");
+          return sy_intern(s, "#f");
         case '|':  // block comment #| ... |#
         case '\\':  // character literal (handle special cases)
         case '(':  // vector literal
@@ -241,7 +241,7 @@ cell_t *sy_read(SchemeY *s, cell_t *port) {
   cell_t *expr = parse_expr(s);
 
   if (s->lookahead == EOF)
-    return syS_intern(s, "#!eof");
+    return sy_intern(s, "#!eof");
 
   if (s->err) {
     read_error(s);
