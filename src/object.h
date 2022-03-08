@@ -15,12 +15,13 @@
 #include <stdlib.h>
 
 typedef union cell cell_t;
+typedef struct heap heap_t;
 
 typedef cell_t *(ffun_t)(SchemeY *, cell_t *);
 
 typedef struct vector {
-  cell_t *items;
-  size_t len, size;
+  cell_t *_items;
+  size_t _len, _size;
 } vector_t;
 
 enum {
@@ -45,8 +46,9 @@ union cell {
   struct {
     size_t _type;
     union {
-      int _int;
+      long _int;
       float _real;
+      int _char;
       char *_string;
       ffun_t *_ffun;
       vector_t *_vector;
@@ -76,7 +78,7 @@ union cell {
 #define set_cons(c,a,d) (car(c) = (a), cdr(c) = (d))
 #define set_int(c,i)    (type(c) = T_INT, as(c)._int = (i))
 #define set_real(c,r)   (type(c) = T_REAL, as(c)._real = (r))
-#define set_char(c,ch)  (type(c) = T_CHAR, as(c)._int = (ch))
+#define set_char(c,ch)  (type(c) = T_CHAR, as(c)._char = (ch))
 #define set_string(c,s) (type(c) = T_STRING, as(c)._string = (s))
 #define set_symbol(c,s) (type(c) = T_SYMBOL, as(c)._string = (s))
 #define set_ffun(c,f)   (type(c) = T_FFUN,   as(c)._ffun = (f))
@@ -84,15 +86,16 @@ union cell {
 #define set_table(c,v)  (type(c) = T_TABLE, as(c)._vector = (v))
 #define set_port(c,p)   (type(c) = T_PORT,   as(c)._port = (p))
 
-cell_t *cons      (SchemeY *s, cell_t *_car, cell_t *_cdr);
-cell_t *mk_int    (SchemeY *s, int _int);
-cell_t *mk_real   (SchemeY *s, float _real);
-cell_t *mk_char   (SchemeY *s, int _Char);
-cell_t *mk_string (SchemeY *s, char *string);
-cell_t *mk_symbol (SchemeY *s, char *symbol);
-cell_t *mk_ffun   (SchemeY *s, ffun_t *ffun);
-cell_t *mk_vector (SchemeY *s, size_t _size);
-cell_t *mk_table  (SchemeY *s, size_t _size);
-cell_t *mk_port   (SchemeY *s, FILE *_port);
+cell_t *cons(SchemeY *s, cell_t *_car, cell_t *_cdr);
+cell_t *mk_int(SchemeY *s, long _int);
+cell_t *mk_real(SchemeY *s, float _real);
+cell_t *mk_char(SchemeY *s, int _Char);
+cell_t *mk_string(SchemeY *s, char *string);
+cell_t *mk_symbol(SchemeY *s, char *symbol);
+cell_t *mk_ffun(SchemeY *s, ffun_t *ffun);
+vector_t *mk_vector_t(SchemeY *s, size_t _size);
+cell_t *mk_vector(SchemeY *s, size_t _size);
+cell_t *mk_table(SchemeY *s, size_t _size);
+cell_t *mk_port(SchemeY *s, FILE *_port);
 
 #endif

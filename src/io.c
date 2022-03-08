@@ -64,8 +64,8 @@ static void save(SchemeY *s, int c) {
       fprintf(stderr, "buffer realloc failed\n");
       exit(1);
     }
+    s->tptr = newtbase + (s->tptr - s->tbase);
     s->tbase = newtbase;
-    s->tptr = s->tbase + (s->tptr - s->tend);
     s->tend = s->tbase + newsize;
   }
   *s->tptr++ = c;
@@ -87,11 +87,11 @@ static cell_t *parse_number(SchemeY *s) {
   char *endptr;
   long i = strtol(nptr, &endptr, 0);
   if (errno == ERANGE || *endptr != '\0') {
-    double d = strtod(nptr, &endptr);
+    float r = strtof(nptr, &endptr);
     if (errno == ERANGE || *endptr != '\0')
       return parse_invalid(s);  // ERROR: number too large
     else
-      return mk_real(s, d);
+      return mk_real(s, r);
   }
   return mk_int(s, i);
 }
@@ -267,8 +267,8 @@ static void write_list(cell_t *obj, FILE *stream) {
 }
 
 static void write_vector(cell_t *obj, FILE *stream) {
-  cell_t *items = as(obj)._vector->items;
-  size_t len = as(obj)._vector->len;
+  cell_t *items = as(obj)._vector->_items;
+  size_t len = as(obj)._vector->_len;
   for (size_t i = 0; i < len - 1; i++) {
     write_obj(items + i, stream);
     fputc(' ', stream);
@@ -286,7 +286,7 @@ static void write_obj(cell_t *obj, FILE *stream) {
   }
   else switch (type(obj)) {
     case T_INT:
-      fprintf(stream, "%d", as(obj)._int);
+      fprintf(stream, "%ld", as(obj)._int);
       break;
     case T_REAL:
       if (as(obj)._real < 1e-3 || as(obj)._real > 1e6)
@@ -300,7 +300,7 @@ static void write_obj(cell_t *obj, FILE *stream) {
     //   fprintf(stream, getv(obj).integer ? "#t" : "#f");
     //   break;
     case T_CHAR:
-      fprintf(stream, "%c", as(obj)._int);
+      fprintf(stream, "%c", as(obj)._char);
       break;
     case T_STRING:
       fprintf(stream, "\"%s\"", as(obj)._string);

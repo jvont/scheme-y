@@ -9,14 +9,12 @@
 #define GLOBAL_ENV_SIZE 128
 #define HEAP_SIZE 1024  // in cells
 
-typedef struct heap heap_t;
-
 enum {
   E_OK,
-  E_EOF,  // unexpected EOF
-  E_TOKEN,  // invalid token
-  E_DOTSEP,  // invalid dot separator
-  E_RANGE,  // number out of range
+  E_EOF,
+  E_TOKEN,
+  E_DOTSEP,
+  E_RANGE,
 };
 
 struct SchemeY {

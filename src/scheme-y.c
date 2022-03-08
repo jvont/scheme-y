@@ -15,7 +15,6 @@ static cell_t *syB_quote(SchemeY *s, cell_t *args) {
 
 int main(int argc, char **argv) {
   SchemeY s;
-  s.prompt = (argc == 1);
   syS_init(&s);
 
   // cell_t *add = syS_intern(&s, "+");
@@ -31,6 +30,7 @@ int main(int argc, char **argv) {
   // cdr(xv) = mk_int(&s, 42);
 
   if (argc == 1) {  // start REPL
+    s.prompt = 1;
     for (;;) {
       s.err = E_OK;
       

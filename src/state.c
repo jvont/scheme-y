@@ -12,9 +12,9 @@ void syS_init(SchemeY *s) {
   s->inport = mk_port(s, stdin);
   s->outport = mk_port(s, stdout);
 
-  s->tbase = s->tptr = malloc(BUFSIZ);
+  s->tbase = s->tptr = malloc(10);
   if (!s->tbase) exit(1);
-  s->tend = s->tbase + BUFSIZ;
+  s->tend = s->tbase + 10;
 
   s->lookahead = s->prompt ? '\n' : EOF;
   s->lineno = 1;
@@ -40,9 +40,9 @@ static unsigned int hash(const char *s) {
 // FUTURE: convert to hash-table-eq/get
 cell_t *syS_lookup(SchemeY *s, cell_t *var) {
   vector_t *v = as(s->globals)._vector;
-  unsigned int size = v->size;
+  unsigned int size = v->_size;
   unsigned int i = hash(as(var)._string) % size;
-  cell_t *ev = v->items;
+  cell_t *ev = v->_items;
   for (; car(ev + i); i = (i + 1) % size) {
     if (car(ev + i) == var)
       return ev + i;
@@ -53,9 +53,9 @@ cell_t *syS_lookup(SchemeY *s, cell_t *var) {
 // Find/store a symbol, returning its associated item.
 cell_t *syS_intern_item(SchemeY *s, char *sym) {
   vector_t *v = as(s->globals)._vector;
-  unsigned int size = v->size;
+  unsigned int size = v->_size;
   unsigned int i = hash(sym) % size;
-  cell_t *ev = v->items;
+  cell_t *ev = v->_items;
   for (; car(ev + i); i = (i + 1) % size) {
     if (strcmp(sym, as(car(ev + i))._string) == 0)
       return ev + i;

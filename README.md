@@ -16,7 +16,7 @@ Scheme-y is an incomplete implementation of Scheme. The main objective of this p
 
 `scheme-y` - Scheme-y's API, along with program entry point.
 
-`builtins` - Standard library procedures + loading.
+`builtins` - Standard library procedures.
 
 `mem` - Memory management using a copying collector.
 

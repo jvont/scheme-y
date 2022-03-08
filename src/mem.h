@@ -15,11 +15,11 @@
 // TODO: dynamic resize
 // TODO: ensure allocated strings are cleaned up properly
 
-typedef struct heap {
+struct heap {
   cell_t *from, *to;  // semi-spaces
   cell_t *next;  // free memory head
   size_t size;  // half-size, in bytes
-} heap_t;
+};
 
 heap_t *syM_new(size_t size);
 void syM_free(heap_t *h);

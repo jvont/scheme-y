@@ -1,5 +1,5 @@
-# CFLAGS = -Wall -Wextra -Wpedantic -ansi -std=c99 -g
-CFLAGS = -ansi -std=c99 -g
+CFLAGS = -ansi -Wpedantic -std=c99 -g
+# CFLAGS += -Wall -Wextra
 LDFLAGS = -lm
 
 SRCS := $(wildcard src/*.c)
