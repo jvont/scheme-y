@@ -5,8 +5,8 @@
 #include <string.h>
 
 // Create a new heap with a half-size of size bytes.
-Heap *syM_new(size_t size) {
-  Heap *h = malloc(sizeof(Heap));
+heap_t *syM_new(size_t size) {
+  heap_t *h = malloc(sizeof(heap_t));
   if (!h) exit(1);
   h->from = h->next = malloc(2 * size);
   if (!h->from) exit(1);
@@ -15,7 +15,7 @@ Heap *syM_new(size_t size) {
 }
 
 // Free a heap object.
-void syM_free(Heap *h) {
+void syM_free(heap_t *h) {
   free(h->from < h->to ? h->from : h->to);
   free(h);
 }
@@ -29,7 +29,7 @@ cell_t *syM_alloc(SchemeY *s) {
 void *syM_malloc(SchemeY *s, size_t size) {
   if (!size) return NULL;
   size_t n = (size + sizeof(cell_t) - 1) / sizeof(cell_t);
-  Heap *h = s->heap;
+  heap_t *h = s->heap;
   if (h->next + n >= h->from + h->size) {
     syM_gc(s);
     if (h->next + n >= h->from + h->size) {
@@ -61,28 +61,28 @@ char *syM_strndup(SchemeY *s, char *src, size_t n) {
 }
 
 // Dynamically resize the heap
-// static void resize(Heap *h, size_t size) {
+// static void resize(heap_t *h, size_t size) {
 
 // }
 
 #define isfrom(h,c) ((c) >= (h)->from && (c) < (h)->from + (h)->size)
 
 // Forward references to the to-space.
-static void forward(Heap *h, cell_t **p) {
+static void forward(heap_t *h, cell_t **p) {
   cell_t *obj = *p;
   cell_t *next = h->next;
   if (!obj)
     return;
-  else if (iscons(obj) || gett(obj) == CLOSURE) {
+  else if (iscons(obj)) {
 
   }
-  else switch (gett(obj)) {
-    case STRING:
-    case SYMBOL:
+  else switch (type(obj)) {
+    case T_STRING:
+    case T_SYMBOL:
 
       break;
-    case VECTOR:
-    case TABLE:
+    case T_VECTOR:
+    case T_TABLE:
 
       break;
     default:
@@ -102,14 +102,14 @@ static void forward(Heap *h, cell_t **p) {
 }
 
 void syM_gc(SchemeY *s) {
-  Heap *h = s->heap;
+  heap_t *h = s->heap;
 
   cell_t *swap = h->from;
   h->from = h->to;
   h->to = swap;
 
   cell_t *scn = h->next = h->from;
-  forward(h, &(s->global_env));
+  forward(h, &(s->globals));
   // for(; scn != heap->next; scn++) {
   //   forward(heap, &(scn->car));
   //   forward(heap, &(scn->cdr));

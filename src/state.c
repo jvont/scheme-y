@@ -7,10 +7,19 @@
 
 void syS_init(SchemeY *s) {
   s->heap = syM_new(HEAP_SIZE * sizeof(cell_t));
-  s->global_env = syO_table(s, GLOBAL_ENV_SIZE);
-  s->env = syO_cons(s, s->global_env, NULL);
-  s->input_port = syO_port(s, stdin, "r");
-  s->output_port = syO_port(s, stdin, "w");
+  s->globals = mk_table(s, GLOBAL_ENV_SIZE);
+  s->env = cons(s, s->globals, NULL);
+  s->inport = mk_port(s, stdin);
+  s->outport = mk_port(s, stdout);
+
+  s->tbase = s->tptr = malloc(BUFSIZ);
+  if (!s->tbase) exit(1);
+  s->tend = s->tbase + BUFSIZ;
+
+  s->lookahead = s->prompt ? '\n' : EOF;
+  s->lineno = 1;
+  s->depth = 0;
+  s->err = E_OK;
 }
 
 void syS_shutdown(SchemeY *s) {
@@ -27,13 +36,13 @@ static unsigned int hash(const char *s) {
   return h;
 }
 
-// Lookup a given variable and return its entry, or NULL if not found.
+// Lookup a given symbol by address and return its entry, or NULL if not found.
 // FUTURE: convert to hash-table-eq/get
 cell_t *syS_lookup(SchemeY *s, cell_t *var) {
-  cell_t *t = s->global_env;
-  unsigned int size = getv(t).vector->size;
-  unsigned int i = hash(getv(var).string) % size;
-  cell_t *ev = getv(t).vector->items;
+  vector_t *v = as(s->globals)._vector;
+  unsigned int size = v->size;
+  unsigned int i = hash(as(var)._string) % size;
+  cell_t *ev = v->items;
   for (; car(ev + i); i = (i + 1) % size) {
     if (car(ev + i) == var)
       return ev + i;
@@ -41,17 +50,23 @@ cell_t *syS_lookup(SchemeY *s, cell_t *var) {
   return NULL;
 }
 
-// Find/store a symbol, returning its cell.
-cell_t *syS_intern(SchemeY *s, char *sym) {
-  cell_t *t = s->global_env;
-  unsigned int size = getv(t).vector->size;
+// Find/store a symbol, returning its associated item.
+cell_t *syS_intern_item(SchemeY *s, char *sym) {
+  vector_t *v = as(s->globals)._vector;
+  unsigned int size = v->size;
   unsigned int i = hash(sym) % size;
-  cell_t *ev = getv(t).vector->items;
+  cell_t *ev = v->items;
   for (; car(ev + i); i = (i + 1) % size) {
-    if (strcmp(sym, getv(car(ev + i)).string) == 0)
-      return car(ev + i);
+    if (strcmp(sym, as(car(ev + i))._string) == 0)
+      return ev + i;
   }
-  return (car(ev + i) = syO_symbol(s, sym));
+  car(ev + i) = mk_symbol(s, sym);
+  return ev + i;
+}
+
+// Find/store a symbol and return it.
+cell_t *syS_intern(SchemeY *s, char *sym) {
+  return car(syS_intern_item(s, sym));
 }
 
 cell_t *map(SchemeY *s, cell_t *args) {
@@ -75,24 +90,27 @@ cell_t *apply(SchemeY *s, cell_t *args) {
 cell_t *eval_list(SchemeY *s, cell_t *args) {
   cell_t *first = syS_eval(s, car(args));
   cell_t *rest = cdr(args) ? eval_list(s, cdr(args)) : NULL;
-  return syO_cons(s, first, rest);
+  return cons(s, first, rest);
 }
 
 // Evaluate an expression.
 cell_t *syS_eval(SchemeY *s, cell_t *expr) {
-  if (!expr)  // empty
-    return NULL;
-  else if (iscons(expr)) {
+  if (!expr) return NULL;  // empty
+  else if (iscons(expr)) {  // list
+
+
+  // else return expr;
+
     cell_t *p = syS_eval(s, car(expr));
     if (!p)
       return NULL;
-    else if (gett(p) == FFUN) {  // foreign-func
+    else if (isffun(p)) {  // foreign-func
       cell_t *args = eval_list(s, cdr(expr));
-      return getv(p).ffun(s, args);
+      return as(p)._ffun(s, args);
     }
     else return NULL;
   }
-  else if (gett(expr) == SYMBOL)
+  else if (issymbol(expr))
     return cdr(syS_lookup(s, expr));
   else
     return expr;

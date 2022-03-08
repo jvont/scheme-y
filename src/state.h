@@ -5,19 +5,39 @@
 #define _SY_STATE_H
 
 #include "object.h"
-#include "mem.h"
 
 #define GLOBAL_ENV_SIZE 128
 #define HEAP_SIZE 1024
 
-struct SchemeY {
-  cell_t *global_env;  // top-level environment
-  cell_t *env;  // environment stack
-  cell_t *input_port;  // current input port
-  cell_t *output_port;  // current output port
+enum {
+  E_OK,
+  E_EOF,  // unexpected EOF
+  E_TOKEN,  // invalid token
+  E_PARSE,  // parse error
+};
 
-  Heap *heap;  // managed heap
+typedef struct heap heap_t;
+
+struct SchemeY {
+  // vector_t *globals;  // top-level environment
+  cell_t *globals;  // top-level environment
+  cell_t *inport;  // current input port
+  cell_t *outport;  // current output port
+
+  cell_t *env;  // current environment stack
+  cell_t *code;  // currently executing code
+  cell_t *args;  // argument stack
+  cell_t *acc;  // accumulator
+
+  heap_t *heap;  // managed heap
   // cell_t *pin;  // temporary objects (for gc)
+
+  char *tbase, *tptr, *tend;  // token buffer
+  int lookahead;  // lookahead character
+  size_t depth, lineno;  // reader state
+  int prompt;  // interactive prompt mode
+
+  int err;  // error status
 };
 
 void syS_init(SchemeY *s);

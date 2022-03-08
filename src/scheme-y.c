@@ -3,6 +3,8 @@
 #include "builtins.h"
 #include "state.h"
 
+#include "io.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,27 +15,28 @@ static cell_t *syB_quote(SchemeY *s, cell_t *args) {
 
 int main(int argc, char **argv) {
   SchemeY s;
+  s.prompt = (argc == 1);
   syS_init(&s);
 
-  cell_t *add = syS_intern(&s, "+");
-  cell_t *addfn = syS_lookup(&s, add);
-  cdr(addfn) = syO_ffun(&s, syB_add);
+  // cell_t *add = syS_intern(&s, "+");
+  // cell_t *addfn = syS_lookup(&s, add);
+  // cdr(addfn) = mk_ffun(&s, syB_add);
 
-  cell_t *quote = syS_intern(&s, "quote");
-  cell_t *qfun = syS_lookup(&s, quote);
-  cdr(qfun) = syO_ffun(&s, syB_quote);
+  // cell_t *quote = syS_intern(&s, "quote");
+  // cell_t *qfun = syS_lookup(&s, quote);
+  // cdr(qfun) = mk_ffun(&s, syB_quote);
 
-  cell_t *x = syS_intern(&s, "x");
-  cell_t *xv = syS_lookup(&s, x);
-  cdr(xv) = syO_integer(&s, 42);
+  // cell_t *x = syS_intern(&s, "x");
+  // cell_t *xv = syS_lookup(&s, x);
+  // cdr(xv) = mk_int(&s, 42);
 
   if (argc == 1) {  // start REPL
     for (;;) {
-      cell_t *expr = syO_read(&s, NULL);
-      cell_t *res = syS_eval(&s, expr);
-
+      s.err = E_OK;
+      
+      cell_t *expr = sy_read(&s, NULL);
       printf("=> ");
-      syO_print(res);
+      print_obj(expr);
     }
   }
   // else if (argc == 2) {  // open file (TODO: multiple files)

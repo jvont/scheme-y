@@ -3,8 +3,8 @@
 ** Every scheme object is either an atom or cons cell. Atoms are tagged
 ** unions, while cons cells contain two pointers (car and cdr) to other
 ** Scheme objects. An atom's tag shares space with the car pointer of
-** the cons cell, relying on the assumption that memory addresses will
-** never reside within the first byte of the memory space.
+** the cons cell, relying on the assumption that memory addresses below
+** 16 are unused.
 */
 #ifndef _SY_OBJECT_H
 #define _SY_OBJECT_H
@@ -24,82 +24,75 @@ typedef struct vector {
 } vector_t;
 
 enum {
-  INTEGER = 1,
-  REAL,
-  CHARACTER,
-  STRING,
-  SYMBOL,
-  FFUN,
-  CLOSURE,
-  VECTOR,
-  TABLE,
-  PORT
+  T_NIL,
+  T_INT,
+  T_REAL,
+  T_CHAR,
+  T_STRING,
+  T_SYMBOL,
+  T_FFUN,
+  T_CLOSURE,
+  T_VECTOR,
+  T_TABLE,
+  T_PORT
 };
 
 union cell {
   struct {
-    cell_t *car;
-    cell_t *cdr;
-  } cons;
+    cell_t *_car;
+    cell_t *_cdr;
+  } _cons;
   struct {
-    size_t type;
+    size_t _type;
     union {
-      long integer;
-      float real;
-      int character;
-      char *string;
-      ffun_t *ffun;
-      vector_t *vector;
-      FILE *port;
-    } as;
-  } atom;
+      int _int;
+      float _real;
+      char *_string;
+      ffun_t *_ffun;
+      vector_t *_vector;
+      FILE *_port;
+    } _as;
+  } _atom;
 };
 
-#define gett(c) ((c)->atom.type)
-#define getv(c) ((c)->atom.as)
+#define car(c) ((c)->_cons._car)
+#define cdr(c) ((c)->_cons._cdr)
 
-#define istype(c,t) (gett(c) == (t))
-#define iscons(c) (gett(c) > 255 || car(c) == NULL)
+#define type(c) ((c)->_atom._type)
+#define as(c)   ((c)->_atom._as)
 
-#define sett(c,t) (gett(c) = (t))
-#define setv(c,v) (getv(c) = (v))
-#define set(c,t,v) (sett(c,t), setv(c,v))
+#define iscons(c)   (type(c) > 255 || car(c) == NULL)
+#define isint(c)    (type(c) == T_INT)
+#define isreal(c)   (type(c) == T_REAL)
+#define isnumber(c) (isint(c) || isreal(c))
+#define ischar(c)   (type(c) == T_CHAR)
+#define isstring(c) (type(c) == T_STRING)
+#define issymbol(c) (type(c) == T_SYMBOL)
+#define isffun(c)   (type(c) == T_FFUN)
+#define isvector(c) (type(c) == T_VECTOR)
+#define istable(c)  (type(c) == T_TABLE)
+#define isport(c)   (type(c) == T_PORT)
 
-#define car(c) ((c)->cons.car)
-#define cdr(c) ((c)->cons.cdr)
+#define set_cons(c,a,d) (car(c) = (a), cdr(c) = (d))
+#define set_int(c,i)    (type(c) = T_INT, as(c)._int = (i))
+#define set_real(c,r)   (type(c) = T_REAL, as(c)._real = (r))
+#define set_char(c,ch)  (type(c) = T_CHAR, as(c)._int = (ch))
+#define set_string(c,s) (type(c) = T_STRING, as(c)._string = (s))
+#define set_symbol(c,s) (type(c) = T_SYMBOL, as(c)._string = (s))
+#define set_ffun(c,f)   (type(c) = T_FFUN,   as(c)._ffun = (f))
+#define set_vector(c,v) (type(c) = T_VECTOR, as(c)._vector = (v))
+#define set_table(c,v)  (type(c) = T_TABLE, as(c)._vector = (v))
+#define set_port(c,p)   (type(c) = T_PORT,   as(c)._port = (p))
 
-// cell_t *cons(cell_t *car, cell_t *cdr) {
-//   cell_t *p = malloc(sizeof(cell_t));
-//   car(p) = car;
-//   cdr(p) = cdr;
-//   return p;
-// }
-
-cell_t *syO_integer   (SchemeY *s, long integer);
-cell_t *syO_real      (SchemeY *s, double real);
-cell_t *syO_character (SchemeY *s, int character);
-cell_t *syO_string    (SchemeY *s, char *string);
-cell_t *syO_symbol    (SchemeY *s, char *symbol);
-cell_t *syO_ffun      (SchemeY *s, ffun_t *ffun);
-cell_t *syO_cons      (SchemeY *s, cell_t *car, cell_t *cdr);
-cell_t *syO_vector    (SchemeY *s, size_t size);
-cell_t *syO_table     (SchemeY *s, size_t size);
-cell_t *syO_port      (SchemeY *s, FILE *stream, char *mode);
-
-// #define initobj(o,k) ((o)->kind = k, unmark(o))
-
-// #define setint(o,i)      (initobj(o, TyInteger), (o)->as.integer = (i))
-// #define setreal(o,r)     (initobj(o, TyReal), (o)->as.real = (r))
-// #define setchar(o,c)     (initobj(o, TyCharacter), (o)->as.character = (c))
-// #define setstring(o,s)   (initobj(o, TyString), (o)->as.string = (s))
-// #define setffun(o,f)     (initobj(o, TyFFun), (o)->as.ffun = (f))
-// #define setcons(o,a,d)   (initobj(o, TyPair), car(o) = (a), cdr(o) = (d))
-// #define setvector(o,v,s) (initobj(o, TyVector), (o)->as.vector.items=v,
-//                           (o)->as.vector.len = 0, (o)->as.vector.size = s)
-
-cell_t *syO_read(SchemeY *s, cell_t *port);
-
-void syO_print(cell_t *obj);
-cell_t *syO_write(SchemeY *s, cell_t *args);
+cell_t *cons      (SchemeY *s, cell_t *_car, cell_t *_cdr);
+cell_t *mk_int    (SchemeY *s, int _int);
+cell_t *mk_real   (SchemeY *s, float _real);
+cell_t *mk_char   (SchemeY *s, int _Char);
+cell_t *mk_string (SchemeY *s, char *string);
+cell_t *mk_symbol (SchemeY *s, char *symbol);
+cell_t *mk_ffun   (SchemeY *s, ffun_t *ffun);
+cell_t *mk_vector (SchemeY *s, size_t _size);
+cell_t *mk_table  (SchemeY *s, size_t _size);
+cell_t *mk_port   (SchemeY *s, FILE *_port);
 
 #endif
