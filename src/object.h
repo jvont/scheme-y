@@ -87,6 +87,7 @@ union cell {
 #define as(c)   ((c)->_atom._as)
 
 #define iscons(c)   (type(c) > 255 || car(c) == NULL)
+#define isatom(c)   (type(c) <= T_PORT && type(c) > 0)
 #define isint(c)    (type(c) == T_INT)
 #define isreal(c)   (type(c) == T_REAL)
 #define isnumber(c) (isint(c) || isreal(c))

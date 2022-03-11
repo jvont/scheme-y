@@ -11,12 +11,6 @@ cell_t *obj_alloc(SchemeY *s) {
   return heap_malloc(s, sizeof(cell_t));
 }
 
-// Get an array of n objects of size bytes, setting their bytes to zero.
-void *obj_calloc(SchemeY *s, size_t n, size_t size) {
-  void *p = heap_malloc(s, n * size);
-  return !p ? NULL : memset(p, 0, n * size);
-}
-
 // Allocate size bytes of cell-aligned memory.
 void *heap_malloc(SchemeY *s, size_t size) {
   if (!size) return NULL;
@@ -32,6 +26,12 @@ void *heap_malloc(SchemeY *s, size_t size) {
   s->pin = s->alloc;
   s->alloc += n;
   return s->pin;
+}
+
+// Get an array of n objects of size bytes, setting their bytes to zero.
+void *heap_calloc(SchemeY *s, size_t n, size_t size) {
+  void *p = heap_malloc(s, n * size);
+  return !p ? NULL : memset(p, 0, n * size);
 }
 
 // Duplicate a null-terminated string.
@@ -52,7 +52,38 @@ char *heap_strndup(SchemeY *s, char *src, size_t n) {
 
 // Forward references to the to-space.
 static void forward(SchemeY *s, cell_t **p) {
+  cell_t *c = *p;
+  if (!c || isatom(c)) return;
+  if (iscons(c)) {
+    // TODO: handle strings, vectors, etc.
+    if (isfrom(s, c))  // already copied?
+      *p = car(c);
+    else {
+      cell_t *n = s->alloc++;
+      *n = *c;  // copy ref
+      car(c) = n;  // place fwd addr at old loc
+      *p = n;
+    }
+  }
+}
 
+static void forward_vector(SchemeY *s, vector_t *v) {
+  cell_t *cur = v->_items;
+  cell_t *end = cur + v->_size;
+  while (cur < end) {
+    cell_t *next;
+    if (car(cur)) {
+      next = s->alloc++;
+      *next = *car(cur);
+      car(cur) = next;
+    }
+    if (cdr(cur)) {
+      next = s->alloc++;
+      *next = *cdr(cur);
+      cdr(cur) = next;
+    }
+    cur++;
+  }
 }
 
 void gc(SchemeY *s) {
@@ -62,17 +93,9 @@ void gc(SchemeY *s) {
 
   cell_t *scn = s->alloc = s->heap;
   
-  /* forward global refs */
-  cell_t *items = s->globals->_items;
-  size_t size = s->globals->_size;
-  for (size_t i = 0; i < size; i++) {
-    cell_t *c = items + i;
-    if (iscons(c)) {
-      // TODO: replace with forward_vector subroutine
-      forward(s, &car(c));
-      forward(s, &cdr(c));
-    }
-  }
+  /* forward roots */
+  forward_vector(s, s->globals);
+  // TODO: forward environment stack, pin, etc.
 
   /* forward remaining */
   for(; scn != s->alloc; scn++)

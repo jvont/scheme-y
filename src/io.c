@@ -120,10 +120,10 @@ static cell_t *parse_identifier(SchemeY *s) {
     next(s);
   }
   *s->tp = '\0';
-  if (isdelim(s->lookahead)) {
+  if (isdelim(s->lookahead))
     return sy_intern(s, s->token);
-  }
-  else return parse_invalid(s);
+  else
+    return parse_invalid(s);
 }
 
 static cell_t *parse_expr(SchemeY *s);

@@ -2,7 +2,7 @@
 #include "object.h"
 #include "builtins.h"
 #include "state.h"
-
+#include "mem.h"
 #include "io.h"
 
 #include <stdio.h>
@@ -15,6 +15,8 @@ int main(int argc, char **argv) {
 
   sy_intern_bind(&s, "+", mk_ffun(&s, sy_add));
   sy_intern_bind(&s, "x", mk_int(&s, 42));
+
+  gc(&s);
 
   if (argc == 1) {  // start REPL
     s.prompt = 1;

@@ -5,18 +5,25 @@
 #include <stdlib.h>
 #include <string.h>
 
-// TODO: allocate global variables outside of managed heap (they are never collected)
 void sy_init(SchemeY *s) {
-  /* allocate heap first */
+  /* global variables (internal structure, never referenced) */
+  s->globals = malloc(sizeof(vector_t));
+  if (!s->globals) exit(1);
+  s->globals->_items = calloc(8, sizeof(cell_t));
+  if (!s->globals->_items) exit(1);
+  s->globals->_len = 0;
+  s->globals->_size = 8;
+  /* managed heap */
   s->heap = malloc(2 * HEAP_SIZE * sizeof(cell_t));
   if (!s->heap) exit(1);
   s->heap2 = s->heap + HEAP_SIZE;
+  s->alloc = s->heap;
   s->semi = HEAP_SIZE;
-  /* global variables */
-  s->globals = mk_vector_t(s, GLOBAL_ENV_SIZE);
+  s->pin = NULL;
+  /* default ports (collected, since they may be referenced) */
   s->inport = mk_port(s, stdin);
   s->outport = mk_port(s, stdout);
-  /* token buffer */
+  /* token read buffer (resizeable) */
   s->token = malloc(BUFSIZ);
   if (!s->token) exit(1);
   s->tend = s->token + 10;

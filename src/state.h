@@ -22,6 +22,7 @@ struct SchemeY {
   vector_t *globals;  // top-level environment
   cell_t *inport;  // current input port
   cell_t *outport;  // current output port
+  cell_t *env;  // environment stack
   /* managed heap */
   cell_t *heap, *heap2;  // semi-spaces
   cell_t *alloc;  // free head

@@ -18,8 +18,8 @@
 // TODO: move heap directly to state
 
 cell_t *obj_alloc(SchemeY *s);
-void *obj_calloc(SchemeY *s, size_t n, size_t size);
 
+void *heap_calloc(SchemeY *s, size_t n, size_t size);
 void *heap_malloc(SchemeY *s, size_t n);
 char *heap_strdup(SchemeY *s, char *src);
 char *heap_strndup(SchemeY *s, char *src, size_t n);
