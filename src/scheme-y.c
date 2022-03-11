@@ -9,16 +9,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-static cell_t *sy_quote(SchemeY *s, cell_t *args) {
-  return args;
-}
-
 int main(int argc, char **argv) {
   SchemeY s;
   sy_init(&s);
 
   sy_intern_bind(&s, "+", mk_ffun(&s, sy_add));
-  sy_intern_bind(&s, "quote", mk_ffun(&s, sy_quote));
   sy_intern_bind(&s, "x", mk_int(&s, 42));
 
   if (argc == 1) {  // start REPL

@@ -4,59 +4,44 @@
 #include <stdio.h>
 #include <string.h>
 
-// Create a new heap with a half-size of size bytes.
-heap_t *syM_new(size_t size) {
-  heap_t *h = malloc(sizeof(heap_t));
-  if (!h) exit(1);
-  h->from = h->next = malloc(2 * size);
-  if (!h->from) exit(1);
-  h->to = h->from + size;
-  h->size = size;
-}
-
-// Free a heap object.
-void syM_free(heap_t *h) {
-  free(h->from < h->to ? h->from : h->to);
-  free(h);
-}
+#define isfrom(s,c) ((c) >= (s)->heap && (c) < (s)->heap + (s)->semi)
 
 // Allocate a single cell.
-cell_t *syM_alloc(SchemeY *s) {
-  return syM_malloc(s, sizeof(cell_t));
+cell_t *obj_alloc(SchemeY *s) {
+  return heap_malloc(s, sizeof(cell_t));
+}
+
+// Get an array of n objects of size bytes, setting their bytes to zero.
+void *obj_calloc(SchemeY *s, size_t n, size_t size) {
+  void *p = heap_malloc(s, n * size);
+  return !p ? NULL : memset(p, 0, n * size);
 }
 
 // Allocate size bytes of cell-aligned memory.
-void *syM_malloc(SchemeY *s, size_t size) {
+void *heap_malloc(SchemeY *s, size_t size) {
   if (!size) return NULL;
   size_t n = (size + sizeof(cell_t) - 1) / sizeof(cell_t);
-  heap_t *h = s->heap;
-  if (h->next + n >= h->from + h->size) {
-    syM_gc(s);
-    if (h->next + n >= h->from + h->size) {
+  if (s->alloc + n >= s->heap + s->semi) {
+    gc(s);
+    if (s->alloc + n >= s->heap + s->semi) {
       // syH_resize(s);
       printf("out of memory!");
       exit(1);
     }
   }
-  cell_t *p = h->next;
-  h->next += n;
-  return p;
-}
-
-// Get an array of n objects of size bytes, setting their bytes to zero.
-void *syM_calloc(SchemeY *s, size_t n, size_t size) {
-  void *p = syM_malloc(s, n * size);
-  return !p ? NULL : memset(p, 0, n * size);
+  s->pin = s->alloc;
+  s->alloc += n;
+  return s->pin;
 }
 
 // Duplicate a null-terminated string.
-char *syM_strdup(SchemeY *s, char *src) {
-  return syM_strndup(s, src, strlen(src));
+char *heap_strdup(SchemeY *s, char *src) {
+  return heap_strndup(s, src, strlen(src));
 }
 
 // Duplicate a string of length n (null character excluded).
-char *syM_strndup(SchemeY *s, char *src, size_t n) {
-  char *dest = syM_malloc(s, n + 1);
+char *heap_strndup(SchemeY *s, char *src, size_t n) {
+  char *dest = heap_malloc(s, n + 1);
   return strcpy(dest, src);
 }
 
@@ -65,53 +50,31 @@ char *syM_strndup(SchemeY *s, char *src, size_t n) {
 
 // }
 
-#define isfrom(h,c) ((c) >= (h)->from && (c) < (h)->from + (h)->size)
-
 // Forward references to the to-space.
-static void forward(heap_t *h, cell_t **p) {
-  cell_t *obj = *p;
-  cell_t *next = h->next;
-  if (!obj)
-    return;
-  else if (iscons(obj)) {
+static void forward(SchemeY *s, cell_t **p) {
 
-  }
-  else switch (type(obj)) {
-    case T_STRING:
-    case T_SYMBOL:
-
-      break;
-    case T_VECTOR:
-    case T_TABLE:
-
-      break;
-    default:
-
-      break;
-  }
-
-  void *fwd = car(obj);
-  if (isfrom(h,(cell_t *)fwd))
-    *p = fwd;
-  else {  // TODO: handle vectors, strings, etc.
-    cell_t *next = h->next++;
-    *next = *obj;
-    car(obj) = next;
-    *p = next;
-  }
 }
 
-void syM_gc(SchemeY *s) {
-  heap_t *h = s->heap;
+void gc(SchemeY *s) {
+  cell_t *swap = s->heap;
+  s->heap = s->heap2;
+  s->heap2 = swap;
 
-  cell_t *swap = h->from;
-  h->from = h->to;
-  h->to = swap;
+  cell_t *scn = s->alloc = s->heap;
+  
+  /* forward global refs */
+  cell_t *items = s->globals->_items;
+  size_t size = s->globals->_size;
+  for (size_t i = 0; i < size; i++) {
+    cell_t *c = items + i;
+    if (iscons(c)) {
+      // TODO: replace with forward_vector subroutine
+      forward(s, &car(c));
+      forward(s, &cdr(c));
+    }
+  }
 
-  cell_t *scn = h->next = h->from;
-  forward(h, &(s->globals));
-  // for(; scn != heap->next; scn++) {
-  //   forward(heap, &(scn->car));
-  //   forward(heap, &(scn->cdr));
-  // }
+  /* forward remaining */
+  for(; scn != s->alloc; scn++)
+    forward(s, &scn);
 }

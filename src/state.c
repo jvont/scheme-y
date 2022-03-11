@@ -5,26 +5,31 @@
 #include <stdlib.h>
 #include <string.h>
 
+// TODO: allocate global variables outside of managed heap (they are never collected)
 void sy_init(SchemeY *s) {
-  s->heap = syM_new(HEAP_SIZE * sizeof(cell_t));
-  s->globals = mk_table(s, GLOBAL_ENV_SIZE);
+  /* allocate heap first */
+  s->heap = malloc(2 * HEAP_SIZE * sizeof(cell_t));
+  if (!s->heap) exit(1);
+  s->heap2 = s->heap + HEAP_SIZE;
+  s->semi = HEAP_SIZE;
+  /* global variables */
+  s->globals = mk_vector_t(s, GLOBAL_ENV_SIZE);
   s->inport = mk_port(s, stdin);
   s->outport = mk_port(s, stdout);
-
-  s->tbase = s->tptr = malloc(10);
-  if (!s->tbase) exit(1);
-  s->tend = s->tbase + 10;
-
-  s->lookahead = s->prompt ? '\n' : EOF;
-  s->lineno = 1;
-  s->depth = 0;
-  s->err = E_OK;
+  /* token buffer */
+  s->token = malloc(BUFSIZ);
+  if (!s->token) exit(1);
+  s->tend = s->token + 10;
 }
 
 void sy_shutdown(SchemeY *s) {
-  syM_free(s->heap);
-  free(s->tbase);
-  s->tptr = s->tend = NULL;
+  free(s->heap < s->heap2 ? s->heap : s->heap2);
+  free(s->token);
+  // if (s->globals)
+  //   free(s->globals._items);
+  // free(s->globals);
+  // free(s->inport);
+  // free(s->outport);
 }
 
 // djb2 hash: http://www.cse.yorku.ca/~oz/hash.html
@@ -39,9 +44,9 @@ static unsigned int hash(const char *s) {
 
 // Lookup a given variable by address and return its entry, or NULL if not found.
 static cell_t *sy_lookup_entry(SchemeY *s, cell_t *var) {
-  vector_t *v = as(s->globals)._vector;
+  vector_t *v = s->globals;
   unsigned int size = v->_size;
-  unsigned int i = hash(as(var)._string) % size;
+  unsigned int i = hash(as(var).string) % size;
   cell_t *ev = v->_items;
   for (; car(ev + i); i = (i + 1) % size) {
     if (car(ev + i) == var)
@@ -67,12 +72,12 @@ cell_t *sy_bind(SchemeY *s, cell_t *var, cell_t *val) {
 
 // Find/store a symbol, returning its associated entry.
 cell_t *sy_intern_entry(SchemeY *s, char *sym) {
-  vector_t *v = as(s->globals)._vector;
+  vector_t *v = s->globals;
   unsigned int size = v->_size;
   unsigned int i = hash(sym) % size;
   cell_t *ev = v->_items;
   for (; car(ev + i); i = (i + 1) % size) {
-    if (strcmp(sym, as(car(ev + i))._string) == 0)
+    if (strcmp(sym, as(car(ev + i)).string) == 0)
       return ev + i;
   }
   car(ev + i) = mk_symbol(s, sym);
@@ -127,7 +132,7 @@ cell_t *sy_eval(SchemeY *s, cell_t *expr) {
       return NULL;
     else if (isffun(p)) {  // foreign-func
       cell_t *args = eval_list(s, cdr(expr));
-      return as(p)._ffun(s, args);
+      return as(p).ffun(s, args);
     }
     else return NULL;
   }

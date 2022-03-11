@@ -15,7 +15,6 @@
 #include <stdlib.h>
 
 typedef union cell cell_t;
-typedef struct heap heap_t;
 
 typedef cell_t *(ffun_t)(SchemeY *, cell_t *);
 
@@ -23,6 +22,30 @@ typedef struct vector {
   cell_t *_items;
   size_t _len, _size;
 } vector_t;
+
+// enum {
+//   P_FREE = 0
+//   P_FILE = 1,
+//   P_BUFFER = 2,
+//   P_READ = 4,
+//   P_WRITE = 8,
+//   P_EOF = 16,
+// };
+
+// typedef struct port {
+//   unsigned int type;
+//   union {
+//     struct {
+//       FILE *stream;
+//       char *name;
+//     } file;
+//     struct {
+//       char *base;
+//       char *ptr;
+//       char *end;
+//     } buffer;
+//   } as;
+// } port_t;
 
 enum {
   T_NIL,
@@ -44,15 +67,15 @@ union cell {
     cell_t *_cdr;
   } _cons;
   struct {
-    size_t _type;  // _car-algined
+    size_t _type;  // _car-aligned
     union {
-      long _int;
-      float _real;
-      int _char;
-      char *_string;
-      ffun_t *_ffun;
-      vector_t *_vector;
-      FILE *_port;
+      long integer;
+      float real;
+      int character;
+      char *string;
+      ffun_t *ffun;
+      vector_t *vector;
+      FILE *port;
     } _as;
   } _atom;
 };
@@ -75,16 +98,16 @@ union cell {
 #define istable(c)  (type(c) == T_TABLE)
 #define isport(c)   (type(c) == T_PORT)
 
-#define set_cons(c,a,d) (car(c) = (a), cdr(c) = (d))
-#define set_int(c,i)    (type(c) = T_INT, as(c)._int = (i))
-#define set_real(c,r)   (type(c) = T_REAL, as(c)._real = (r))
-#define set_char(c,ch)  (type(c) = T_CHAR, as(c)._char = (ch))
-#define set_string(c,s) (type(c) = T_STRING, as(c)._string = (s))
-#define set_symbol(c,s) (type(c) = T_SYMBOL, as(c)._string = (s))
-#define set_ffun(c,f)   (type(c) = T_FFUN,   as(c)._ffun = (f))
-#define set_vector(c,v) (type(c) = T_VECTOR, as(c)._vector = (v))
-#define set_table(c,v)  (type(c) = T_TABLE, as(c)._vector = (v))
-#define set_port(c,p)   (type(c) = T_PORT,   as(c)._port = (p))
+cell_t *set_cons(cell_t *c, cell_t *_car, cell_t *_cdr);
+cell_t *set_int(cell_t *c, long i);
+cell_t *set_real(cell_t *c, float r);
+cell_t *set_char(cell_t *c, int ch);
+cell_t *set_string(cell_t *c, char *s);
+cell_t *set_symbol(cell_t *c, char *s);
+cell_t *set_ffun(cell_t *c, ffun_t *f);
+cell_t *set_vector(cell_t *c, vector_t *v);
+cell_t *set_table(cell_t *c, vector_t *v);
+cell_t *set_port(cell_t *c, FILE *p);
 
 cell_t *cons(SchemeY *s, cell_t *a, cell_t *d);
 cell_t *mk_int(SchemeY *s, long i);
@@ -93,9 +116,10 @@ cell_t *mk_char(SchemeY *s, int ch);
 cell_t *mk_string(SchemeY *s, char *str);
 cell_t *mk_symbol(SchemeY *s, char *sym);
 cell_t *mk_ffun(SchemeY *s, ffun_t *f);
-vector_t *mk_vector_t(SchemeY *s, size_t sz);
 cell_t *mk_vector(SchemeY *s, size_t sz);
 cell_t *mk_table(SchemeY *s, size_t sz);
 cell_t *mk_port(SchemeY *s, FILE *p);
+
+vector_t *mk_vector_t(SchemeY *s, size_t sz);
 
 #endif

@@ -14,15 +14,15 @@ cell_t *sy_add(SchemeY *s, cell_t *args) {
     cell_t *a = car(args);
     if (isint(a)) {
       if (isint(r))
-        as(r)._int += as(a)._int;
+        as(r).integer += as(a).integer;
       else
-        as(r)._real += (float)as(a)._int;
+        as(r).real += (float)as(a).integer;
     }
     else if (isreal(a)) {
       if (isint(r))
-        set_real(r, (float)as(r)._int + as(a)._real);
+        set_real(r, (float)as(r).integer + as(a).real);
       else
-        as(r)._real += as(a)._real;
+        as(r).real += as(a).real;
     }
     else return NULL;
   }
@@ -35,15 +35,15 @@ cell_t *sy_sub(SchemeY *s, cell_t *args) {
     cell_t *a = car(args);
     if (isint(a)) {
       if (isint(r))
-        as(r)._int -= as(a)._int;
+        as(r).integer -= as(a).integer;
       else
-        as(r)._real -= (float)as(a)._int;
+        as(r).real -= (float)as(a).integer;
     }
     else if (isreal(a)) {
       if (isint(r))
-        set_real(r, (float)as(r)._int - as(a)._real);
+        set_real(r, (float)as(r).integer - as(a).real);
       else
-        as(r)._real -= as(a)._real;
+        as(r).real -= as(a).real;
     }
     else return NULL;
   }
@@ -53,24 +53,24 @@ cell_t *sy_sub(SchemeY *s, cell_t *args) {
 cell_t *sy_mul(SchemeY *s, cell_t *args) {
   cell_t *r, *a = car(args);
   if (isint(a))
-    r = mk_int(s, as(a)._int);
+    r = mk_int(s, as(a).integer);
   else if (isreal(a))
-    r = mk_real(s, as(a)._real);
+    r = mk_real(s, as(a).real);
   else
     return NULL;
   for (args = cdr(args); args; args = cdr(args)) {
     a = car(args);
     if (isint(a)) {
       if (isint(r))
-        as(r)._int *= as(a)._int;
+        as(r).integer *= as(a).integer;
       else
-        as(r)._real *= (float)as(a)._int;
+        as(r).real *= (float)as(a).integer;
     }
     else if (isreal(a)) {
       if (isint(r))
-        set_real(r, (float)as(r)._int * as(a)._real);
+        set_real(r, (float)as(r).integer * as(a).real);
       else
-        as(r)._real *= as(a)._real;
+        as(r).real *= as(a).real;
     }
     else return NULL;
   }
@@ -80,24 +80,24 @@ cell_t *sy_mul(SchemeY *s, cell_t *args) {
 cell_t *sy_div(SchemeY *s, cell_t *args) {
   cell_t *r, *a = car(args);
   if (isint(a))
-    r = mk_int(s, as(a)._int);
+    r = mk_int(s, as(a).integer);
   else if (isreal(a))
-    r = mk_real(s, as(a)._real);
+    r = mk_real(s, as(a).real);
   else
     return NULL;
   for (args = cdr(args); args; args = cdr(args)) {
     a = car(args);
     if (isint(a)) {
       if (isint(r))
-        as(r)._int /= as(a)._int;
+        as(r).integer /= as(a).integer;
       else
-        as(r)._real /= (float)as(a)._int;
+        as(r).real /= (float)as(a).integer;
     }
     else if (isreal(a)) {
       if (isint(r))
-        set_real(r, (float)as(r)._int / as(a)._real);
+        set_real(r, (float)as(r).integer / as(a).real);
       else
-        as(r)._real /= as(a)._real;
+        as(r).real /= as(a).real;
     }
     else return NULL;
   }
