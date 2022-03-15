@@ -1,8 +1,8 @@
 /*
 ** Interpreter state.
 */
-#ifndef _SY_STATE_H
-#define _SY_STATE_H
+#ifndef _STATE_H
+#define _STATE_H
 
 #include "object.h"
 
@@ -22,17 +22,25 @@ struct SchemeY {
   vector_t *globals;  // top-level environment
   cell_t *inport;  // current input port
   cell_t *outport;  // current output port
+
+  /* registers */
   cell_t *env;  // environment stack
+  cell_t *eval;  // current code
+  cell_t *args;  // closure arguments
+  cell_t *acc;  // accumulator
+
   /* managed heap */
   cell_t *heap, *heap2;  // semi-spaces
-  cell_t *alloc;  // free head
+  cell_t *next;  // next free space
   size_t semi;  // semi-space size
   cell_t *pin;  // previously allocated object
+
   /* reader state */
   char *token, *tp, *tend;  // token buffer
   int lookahead;  // lookahead character
   size_t depth, lineno;  // reader state
   int prompt;  // interactive prompt mode?
+  
   /* error handling */
   int err;  // error status
 };

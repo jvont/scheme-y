@@ -17,6 +17,7 @@ int main(int argc, char **argv) {
   sy_intern_bind(&s, "x", mk_int(&s, 42));
 
   gc(&s);
+  gc(&s);
 
   if (argc == 1) {  // start REPL
     s.prompt = 1;

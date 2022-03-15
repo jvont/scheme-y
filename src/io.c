@@ -258,7 +258,7 @@ static void write_obj(cell_t *obj, FILE *stream);
 static void write_list(cell_t *obj, FILE *stream) {
   write_obj(car(obj), stream);
   if (cdr(obj)) {
-    if (iscons(cdr(obj))) {
+    if (islist(cdr(obj))) {
       fputc(' ', stream);
       write_list(cdr(obj), stream);
     }
@@ -283,7 +283,7 @@ static void write_vector(cell_t *obj, FILE *stream) {
 static void write_obj(cell_t *obj, FILE *stream) {
   if (!obj)
     fprintf(stream, "()");
-  else if (iscons(obj)) {
+  else if (islist(obj)) {
     fputc('(', stream);
     write_list(obj, stream);
     fputc(')', stream);
@@ -313,7 +313,7 @@ static void write_obj(cell_t *obj, FILE *stream) {
       fprintf(stream, "%s", as(obj).string);
       break;
     case T_FFUN:
-      fprintf(stream, "<foreign-procedure>");
+      fprintf(stream, "<ffun>");
       break;
     case T_VECTOR:
       fprintf(stream, "#(");

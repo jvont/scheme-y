@@ -5,8 +5,8 @@
 ** aligned to the size of a cell. Copying collection is performed, using
 ** Cheney's algorithm.
 */
-#ifndef _SY_MEM_H
-#define _SY_MEM_H
+#ifndef _MEM_H
+#define _MEM_H
 
 #include "object.h"
 #include "state.h"

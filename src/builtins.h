@@ -2,8 +2,8 @@
 ** Subset of Scheme's standard procedures.
 ** reference: https://small.r7rs.org/attachment/r7rs.pdf
 */
-#ifndef _SY_BUILTINS_H
-#define _SY_BUILTINS_H
+#ifndef _BUILTINS_H
+#define _BUILTINS_H
 
 #include "object.h"
 

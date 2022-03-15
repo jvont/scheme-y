@@ -6,8 +6,8 @@
 ** the cons cell, relying on the assumption that memory addresses below
 ** 16 are unused.
 */
-#ifndef _SY_OBJECT_H
-#define _SY_OBJECT_H
+#ifndef _OBJECT_H
+#define _OBJECT_H
 
 #include "scheme-y.h"
 
@@ -55,7 +55,6 @@ enum {
   T_STRING,
   T_SYMBOL,
   T_FFUN,
-  T_CLOSURE,
   T_VECTOR,
   T_TABLE,
   T_PORT
@@ -65,7 +64,7 @@ union cell {
   struct {
     cell_t *_car;
     cell_t *_cdr;
-  } _cons;
+  } _list;
   struct {
     size_t _type;  // _car-aligned
     union {
@@ -80,14 +79,15 @@ union cell {
   } _atom;
 };
 
-#define car(c) ((c)->_cons._car)
-#define cdr(c) ((c)->_cons._cdr)
+#define car(c) ((c)->_list._car)
+#define cdr(c) ((c)->_list._cdr)
 
 #define type(c) ((c)->_atom._type)
 #define as(c)   ((c)->_atom._as)
 
-#define iscons(c)   (type(c) > 255 || car(c) == NULL)
-#define isatom(c)   (type(c) <= T_PORT && type(c) > 0)
+#define islist(c)   (type(c) > 255 || car(c) == NULL)
+#define isatom(c)   (type(c) > T_NIL && type(c) <= T_PORT)
+
 #define isint(c)    (type(c) == T_INT)
 #define isreal(c)   (type(c) == T_REAL)
 #define isnumber(c) (isint(c) || isreal(c))

@@ -6,7 +6,12 @@ SRCS := $(wildcard src/*.c)
 OBJS := $(SRCS:%.c=%.o)
 TESTS := $(wildcard tests/*.c)
 
-.PHONY: all tests clean
+.PHONY: rebuild all tests clean
+
+# rebuild: clean all
+rebuild: clean bin/scheme-y
+
+all: bin/scheme-y tests
 
 bin/scheme-y: $(OBJS) | bin
 	gcc $^ -o $@ $(LDFLAGS)

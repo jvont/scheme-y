@@ -17,7 +17,7 @@ void sy_init(SchemeY *s) {
   s->heap = malloc(2 * HEAP_SIZE * sizeof(cell_t));
   if (!s->heap) exit(1);
   s->heap2 = s->heap + HEAP_SIZE;
-  s->alloc = s->heap;
+  s->next = s->heap;
   s->semi = HEAP_SIZE;
   s->pin = NULL;
   /* default ports (collected, since they may be referenced) */
@@ -129,7 +129,7 @@ cell_t *eval_list(SchemeY *s, cell_t *args) {
 // Evaluate an expression.
 cell_t *sy_eval(SchemeY *s, cell_t *expr) {
   if (!expr) return NULL;  // empty
-  else if (iscons(expr)) {  // list
+  else if (islist(expr)) {  // list
 
 
   // else return expr;
