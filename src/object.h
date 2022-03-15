@@ -9,11 +9,10 @@
 #ifndef _OBJECT_H
 #define _OBJECT_H
 
-#include "scheme-y.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 
+typedef struct SchemeY SchemeY;
 typedef union cell cell_t;
 
 typedef cell_t *(ffun_t)(SchemeY *, cell_t *);
@@ -23,17 +22,15 @@ typedef struct vector {
   size_t _len, _size;
 } vector_t;
 
-// enum {
-//   P_FREE = 0
-//   P_FILE = 1,
-//   P_BUFFER = 2,
-//   P_READ = 4,
-//   P_WRITE = 8,
-//   P_EOF = 16,
-// };
-
 // typedef struct port {
-//   unsigned int type;
+//   enum {
+//     P_FREE = 0,
+//     P_FILE = 1,
+//     P_BUFFER = 2,
+//     P_READ = 4,
+//     P_WRITE = 8,
+//     P_EOF = 16,
+//   } type;
 //   union {
 //     struct {
 //       FILE *stream;
@@ -48,8 +45,7 @@ typedef struct vector {
 // } port_t;
 
 enum {
-  T_NIL,
-  T_INT,
+  T_INT = 1,
   T_REAL,
   T_CHAR,
   T_STRING,
@@ -66,7 +62,7 @@ union cell {
     cell_t *_cdr;
   } _list;
   struct {
-    size_t _type;  // _car-aligned
+    size_t _type;  /* _car-aligned */
     union {
       long integer;
       float real;
@@ -85,8 +81,8 @@ union cell {
 #define type(c) ((c)->_atom._type)
 #define as(c)   ((c)->_atom._as)
 
-#define islist(c)   (type(c) > 255 || car(c) == NULL)
-#define isatom(c)   (type(c) > T_NIL && type(c) <= T_PORT)
+#define islist(c)   (c && type(c) > 255)
+#define isatom(c)   (!c || (T_INT <= type(c) && type(c) <= T_PORT))
 
 #define isint(c)    (type(c) == T_INT)
 #define isreal(c)   (type(c) == T_REAL)
@@ -122,5 +118,10 @@ cell_t *mk_table(SchemeY *s, size_t sz);
 cell_t *mk_port(SchemeY *s, FILE *p);
 
 vector_t *mk_vector_t(SchemeY *s, size_t sz);
+
+
+/* Hash table methods */
+
+
 
 #endif

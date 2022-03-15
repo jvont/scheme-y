@@ -1,9 +1,8 @@
-#include "scheme-y.h"
-#include "object.h"
 #include "builtins.h"
-#include "state.h"
-#include "mem.h"
 #include "io.h"
+#include "mem.h"
+#include "object.h"
+#include "state.h"
 
 #include <stdio.h>
 #include <stdlib.h>

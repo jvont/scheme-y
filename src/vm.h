@@ -6,9 +6,9 @@
 
 enum {
   OP_CONST,
-  OP_LOADVAR,
-  OP_STOREVAR,
-  OP_DEFVAR,
+  OP_LOAD,
+  OP_STORE,
+  OP_DEFINE,
   OP_FUNCTION,
   OP_POP,
   OP_JUMP,

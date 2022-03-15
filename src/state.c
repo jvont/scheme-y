@@ -13,6 +13,7 @@ void sy_init(SchemeY *s) {
   if (!s->globals->_items) exit(1);
   s->globals->_len = 0;
   s->globals->_size = 8;
+
   /* managed heap */
   s->heap = malloc(2 * HEAP_SIZE * sizeof(cell_t));
   if (!s->heap) exit(1);
@@ -20,9 +21,11 @@ void sy_init(SchemeY *s) {
   s->next = s->heap;
   s->semi = HEAP_SIZE;
   s->pin = NULL;
+
   /* default ports (collected, since they may be referenced) */
   s->inport = mk_port(s, stdin);
   s->outport = mk_port(s, stdout);
+
   /* token read buffer (resizeable) */
   s->token = malloc(BUFSIZ);
   if (!s->token) exit(1);
