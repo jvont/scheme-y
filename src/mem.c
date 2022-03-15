@@ -51,10 +51,15 @@ char *heap_strndup(SchemeY *s, char *src, size_t n) {
 
 // }
 
+#define fwd(s,r) {\
+  *(s)->next = *(r);\
+  type(r) = T_FWD;\
+  as(r).fwd = (s)->next++;\
+}
+
 // Forward references to the to-space.
 static void forward(SchemeY *s, cell_t **p) {
   // TODO: forward atom contents (symbol/string, vector, etc.)
-
   cell_t *c = *p;
   if (!c)
     return;
@@ -76,7 +81,6 @@ static void forward(SchemeY *s, cell_t **p) {
     case T_STRING:
     case T_SYMBOL:
       // cellsize(strlen(as(c).string));
-
     // case T_FFUN:
     case T_VECTOR:
     case T_TABLE:
@@ -86,14 +90,8 @@ static void forward(SchemeY *s, cell_t **p) {
   }
 }
 
-static void forward_atom(SchemeY *s, cell_t **p) {
-
-}
-
-#define move_ref(s,r) (*(s)->next = *(r), (r) = (s)->next++)
-
 // Forward the contents of the global environment.
-static void forward_globals(SchemeY *s, vector_t *v) {
+static void copy_globals(SchemeY *s, vector_t *v) {
   cell_t *cur = v->_items;
   cell_t *end = cur + v->_size;
 
@@ -102,9 +100,9 @@ static void forward_globals(SchemeY *s, vector_t *v) {
   for (; cur < end; cur++) {
     cell_t *next;
     if (car(cur))
-      move_ref(s, car(cur));
+      fwd(s, car(cur));
     if (cdr(cur))
-      move_ref(s, cdr(cur));
+      fwd(s, cdr(cur));
   }
 }
 
@@ -120,16 +118,16 @@ void gc(SchemeY *s) {
   cell_t *scan = s->next = s->heap;
   
   /* forward roots */
-  forward_globals(s, s->globals);
-  move_ref(s, s->inport);
-  move_ref(s, s->outport);
+  copy_globals(s, s->globals);
+  copy_obj(s, s->inport);
+  copy_obj(s, s->outport);
 
   // TODO: forward environment stack, pin, etc.
 
   for(; scan != s->next; scan++) {
     printf("forwarding object: ");
     print_obj(scan);
-    forward(s, &scan);
+    copy_obj(s, &scan);
   }
 
   printf("after gc: %zu cells\n", s->next - s->heap);

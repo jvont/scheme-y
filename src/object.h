@@ -53,7 +53,8 @@ enum {
   T_FFUN,
   T_VECTOR,
   T_TABLE,
-  T_PORT
+  T_PORT,
+  T_FWD,  /* forwarding pointer */
 };
 
 union cell {
@@ -71,6 +72,7 @@ union cell {
       ffun_t *ffun;
       vector_t *vector;
       FILE *port;
+      cell_t *fwd;
     } _as;
   } _atom;
 };
@@ -94,6 +96,7 @@ union cell {
 #define isvector(c) (type(c) == T_VECTOR)
 #define istable(c)  (type(c) == T_TABLE)
 #define isport(c)   (type(c) == T_PORT)
+#define isfwd(c)    (type(c) == T_FWD)
 
 cell_t *set_cons(cell_t *c, cell_t *_car, cell_t *_cdr);
 cell_t *set_int(cell_t *c, long i);
@@ -105,6 +108,7 @@ cell_t *set_ffun(cell_t *c, ffun_t *f);
 cell_t *set_vector(cell_t *c, vector_t *v);
 cell_t *set_table(cell_t *c, vector_t *v);
 cell_t *set_port(cell_t *c, FILE *p);
+// cell_t *set_fwd(cell_t *c, cell_t *f);
 
 cell_t *cons(SchemeY *s, cell_t *a, cell_t *d);
 cell_t *mk_int(SchemeY *s, long i);
