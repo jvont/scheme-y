@@ -20,8 +20,8 @@ enum {
 struct SchemeY {
   /* global variables */
   vector_t *globals;  // top-level environment
-  cell_t *inport;  // current input port
-  cell_t *outport;  // current output port
+  cell_t *inport;  // default input port
+  cell_t *outport;  // default output port
 
   /* registers */
   cell_t *env;  // environment stack
@@ -30,10 +30,10 @@ struct SchemeY {
   cell_t *acc;  // accumulator
 
   /* managed heap */
+  // heap_t *g0, *g1;
   cell_t *heap, *heap2;  // semi-spaces
   cell_t *next;  // next free space
   size_t semi;  // semi-space size
-  cell_t *pin;  // previously allocated object
 
   /* reader state */
   char *token, *tp, *tend;  // token buffer

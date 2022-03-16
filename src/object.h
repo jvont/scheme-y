@@ -59,11 +59,11 @@ enum {
 
 union cell {
   struct {
-    cell_t *_car;
-    cell_t *_cdr;
-  } _list;
+    cell_t *car;
+    cell_t *cdr;
+  } list;
   struct {
-    size_t _type;  /* _car-aligned */
+    size_t type;  /* car-aligned */
     union {
       long integer;
       float real;
@@ -73,17 +73,18 @@ union cell {
       vector_t *vector;
       FILE *port;
       cell_t *fwd;
-    } _as;
-  } _atom;
+    } as;
+  } atom;
 };
 
+// #define get(c) (!(c) || (c)->atom.type != T_FWD ? (c) : (c)->atom.as.fwd)
+#define get(c) (c)
 
+#define car(c) (get(c)->list.car)
+#define cdr(c) (get(c)->list.cdr)
 
-#define car(c) ((c)->_list._car)
-#define cdr(c) ((c)->_list._cdr)
-
-#define type(c) ((c)->_atom._type)
-#define as(c)   ((c)->_atom._as)
+#define type(c) (get(c)->atom.type)
+#define as(c)   (get(c)->atom.as)
 
 #define islist(c)   (c && type(c) > 255)
 #define isatom(c)   (!c || (T_INT <= type(c) && type(c) <= T_PORT))
@@ -100,7 +101,7 @@ union cell {
 #define isport(c)   (type(c) == T_PORT)
 #define isfwd(c)    (type(c) == T_FWD)
 
-cell_t *set_cons(cell_t *c, cell_t *_car, cell_t *_cdr);
+cell_t *set_cons(cell_t *c, cell_t *a, cell_t *d);
 cell_t *set_int(cell_t *c, long i);
 cell_t *set_real(cell_t *c, float r);
 cell_t *set_char(cell_t *c, int ch);

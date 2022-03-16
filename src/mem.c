@@ -24,10 +24,10 @@ void *heap_malloc(SchemeY *s, size_t size) {
       exit(1);
     }
   }
-  s->pin = s->next;
+  cell_t *c = s->next;
   s->next += n;
   // printf("  heap: %zu cells\n", s->next - s->heap);
-  return s->pin;
+  return c;
 }
 
 // Get an array of n objects of size bytes, setting their bytes to zero.
@@ -95,8 +95,6 @@ static void copy_obj(SchemeY *s, cell_t **p) {
 
 void gc(SchemeY *s) {
   printf("before gc: %zu cells\n", s->next - s->heap);
-  printf("pin: ");
-  print_obj(s->pin);
 
   /* swap semi-spaces */
   cell_t *swap = s->heap;
@@ -114,8 +112,6 @@ void gc(SchemeY *s) {
     copy_obj(s, &car(cur));
     copy_obj(s, &cdr(cur));
   }
-
-  copy_obj(s, &s->pin);
 
   printf("after gc: %zu cells\n", s->next - s->heap);
 }

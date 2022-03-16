@@ -17,6 +17,12 @@
 // TODO: ensure allocated strings are cleaned up properly
 // TODO: move heap directly to state
 
+typedef struct heap {
+  cell_t *from, *to;
+  cell_t *next;
+  size_t semi;  // semi-space size
+} heap_t;
+
 cell_t *obj_alloc(SchemeY *s);
 
 void *heap_calloc(SchemeY *s, size_t n, size_t size);
@@ -24,6 +30,7 @@ void *heap_malloc(SchemeY *s, size_t n);
 char *heap_strdup(SchemeY *s, char *src);
 char *heap_strndup(SchemeY *s, char *src, size_t n);
 
+// void gc(SchemeY *s, int generation);
 void gc(SchemeY *s);
 
 #endif

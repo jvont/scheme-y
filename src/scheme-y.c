@@ -22,6 +22,7 @@ int main(int argc, char **argv) {
       s->err = E_OK;
       
       cell_t *expr = sy_read(s, NULL);
+      printf("after read: %zu cells\n", s->next - s->heap);
       cell_t *ret = sy_eval(s, expr);
       printf("=> ");
       print_obj(ret);

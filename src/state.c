@@ -2,6 +2,7 @@
 #include "mem.h"
 
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -20,7 +21,6 @@ void sy_init(SchemeY *s) {
   s->heap2 = s->heap + HEAP_SIZE;
   s->next = s->heap;
   s->semi = HEAP_SIZE;
-  s->pin = NULL;
 
   /* default ports (collected, since they may be referenced) */
   s->inport = mk_port(s, stdin);

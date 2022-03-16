@@ -13,7 +13,7 @@ cell_t *set_vector(cell_t *c, vector_t *v) { type(c) = T_VECTOR; as(c).vector = 
 cell_t *set_table(cell_t *c, vector_t *v) { type(c) = T_TABLE; as(c).vector = v; return c; }
 cell_t *set_port(cell_t *c, FILE *p) { type(c) = T_PORT; as(c).port = p; return c; }
 
-cell_t *cons(SchemeY *s, cell_t *_car, cell_t *_cdr) { return set_cons(obj_alloc(s), _car, _cdr); }
+cell_t *cons(SchemeY *s, cell_t *a, cell_t *d) { return set_cons(obj_alloc(s), a, d); }
 cell_t *mk_int(SchemeY *s, long i) { return set_int(obj_alloc(s), i); }
 cell_t *mk_real(SchemeY *s, float r) { return set_real(obj_alloc(s), r); }
 cell_t *mk_char(SchemeY *s, int ch) { return set_char(obj_alloc(s), ch); }
