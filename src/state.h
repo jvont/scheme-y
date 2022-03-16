@@ -6,8 +6,8 @@
 
 #include "object.h"
 
-#define GLOBAL_ENV_SIZE 128
-#define HEAP_SIZE 1024
+#define GLOBAL_ENV_SIZE 8
+#define HEAP_SIZE 32
 
 enum {
   E_OK,

@@ -1,4 +1,4 @@
 # TODO List
 
-- Handle memory allocation failure (ensure object references aren't invalidated)
-- VM-like evaluation procedures
+- finish meta-circular evaluator
+- evaluation stack (collect after each function eval)

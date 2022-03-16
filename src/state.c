@@ -9,10 +9,10 @@ void sy_init(SchemeY *s) {
   /* global variables (internal structure, never referenced) */
   s->globals = malloc(sizeof(vector_t));
   if (!s->globals) exit(1);
-  s->globals->items = calloc(8, sizeof(cell_t));
+  s->globals->items = calloc(GLOBAL_ENV_SIZE, sizeof(cell_t));
   if (!s->globals->items) exit(1);
   s->globals->len = 0;
-  s->globals->size = 8;
+  s->globals->size = GLOBAL_ENV_SIZE;
 
   /* managed heap */
   s->heap = malloc(2 * HEAP_SIZE * sizeof(cell_t));
@@ -102,7 +102,7 @@ cell_t *sy_intern(SchemeY *s, char *sym) {
 cell_t *sy_intern_bind(SchemeY *s, char *sym, cell_t *val) {
   cell_t *e = sy_intern_entry(s, sym);
   cdr(e) = val;
-  return NULL;
+  return e;
 }
 
 cell_t *map(SchemeY *s, cell_t *args) {

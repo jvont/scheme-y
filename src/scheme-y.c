@@ -9,22 +9,20 @@
 #include <string.h>
 
 int main(int argc, char **argv) {
-  SchemeY s;
-  sy_init(&s);
+  SchemeY ss;
+  SchemeY *s = &ss;
+  sy_init(s);
 
-  sy_intern_bind(&s, "+", mk_ffun(&s, sy_add));
-  sy_intern_bind(&s, "x", mk_int(&s, 42));
-
-  gc(&s);
-  gc(&s);
+  sy_intern_bind(s, "+", mk_ffun(s, sy_add));
+  sy_intern_bind(s, "x", mk_int(s, 42));
 
   if (argc == 1) {  // start REPL
-    s.prompt = 1;
+    s->prompt = 1;
     for (;;) {
-      s.err = E_OK;
+      s->err = E_OK;
       
-      cell_t *expr = sy_read(&s, NULL);
-      cell_t *ret = sy_eval(&s, expr);
+      cell_t *expr = sy_read(s, NULL);
+      cell_t *ret = sy_eval(s, expr);
       printf("=> ");
       print_obj(ret);
     }

@@ -137,7 +137,7 @@ static cell_t *parse_list(SchemeY *s) {
     return NULL;
   }
   int dotsep = (s->lookahead == '.');
-  cell_t *obj = parse_expr(s);
+  cell_t *obj = parse_expr(s);  // TODO: handle object pinning
   cell_t *rest = parse_list(s);
   if (dotsep && rest)
     s->err = E_DOTSEP;

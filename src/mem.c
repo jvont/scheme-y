@@ -20,12 +20,13 @@ void *heap_malloc(SchemeY *s, size_t size) {
     gc(s);
     if (s->next + n >= s->heap + s->semi) {
       // syH_resize(s);
-      printf("out of memory!");
+      printf("out of memory!\n");
       exit(1);
     }
   }
   s->pin = s->next;
   s->next += n;
+  // printf("  heap: %zu cells\n", s->next - s->heap);
   return s->pin;
 }
 
@@ -69,28 +70,23 @@ static void copy_obj(SchemeY *s, cell_t **p) {
     cell_t *fwd = s->next++;
     *fwd = *c;
     if (islist(c)) {  // recursively copy list
-      copy_obj(s, &car(c));
-      copy_obj(s, &cdr(c));
+      copy_obj(s, &car(fwd));
+      copy_obj(s, &cdr(fwd));
     }
     else switch (type(c)) {
-      // case T_INT:
-      // case T_REAL:
-      // case T_CHAR:
       case T_STRING:
       case T_SYMBOL:
         as(fwd).string = heap_strdup(s, as(c).string);
         break;
-      // case T_FFUN:
       case T_VECTOR:
       case T_TABLE:
-        
+        // TODO: copy vector
         break;
-      // case T_PORT:
-      // default:
-      //   break;
+      default:
+        break;
     }
-    type(c) = T_FWD;
     as(c).fwd = fwd;
+    type(c) = T_FWD;
     *p = fwd;
   }
 }
@@ -99,6 +95,8 @@ static void copy_obj(SchemeY *s, cell_t **p) {
 
 void gc(SchemeY *s) {
   printf("before gc: %zu cells\n", s->next - s->heap);
+  printf("pin: ");
+  print_obj(s->pin);
 
   /* swap semi-spaces */
   cell_t *swap = s->heap;
@@ -116,6 +114,8 @@ void gc(SchemeY *s) {
     copy_obj(s, &car(cur));
     copy_obj(s, &cdr(cur));
   }
+
+  copy_obj(s, &s->pin);
 
   printf("after gc: %zu cells\n", s->next - s->heap);
 }
