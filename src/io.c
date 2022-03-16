@@ -47,7 +47,7 @@ static void next(SchemeY *s) {
   }
 }
 
-// cell_t *sy_read_char(SchemeY *s, cell_t *port) {
+// cell *sy_read_char(SchemeY *s, cell *port) {
 
 // }
 
@@ -73,14 +73,14 @@ static void save(SchemeY *s, int c) {
 }
 
 // Scan an invalid token until next delimiter.
-static cell_t *parse_invalid(SchemeY *s) {
+static cell *parse_invalid(SchemeY *s) {
   s->err = E_TOKEN;
   save_until(s, isdelim);
   return NULL;
 }
 
 // Number = integer | real ;
-static cell_t *parse_number(SchemeY *s) {
+static cell *parse_number(SchemeY *s) {
   save_until(s, isdelim);
   errno = 0;  // reset errno before call
   char *nptr = s->token;
@@ -97,7 +97,7 @@ static cell_t *parse_number(SchemeY *s) {
 }
 
 // String = " { ( character | escape ) - " } " ;
-static cell_t *parse_string(SchemeY *s) {
+static cell *parse_string(SchemeY *s) {
   next(s);
   while (s->lookahead != '"') {
     if (s->lookahead == '\\')  // string escape
@@ -114,7 +114,7 @@ static cell_t *parse_string(SchemeY *s) {
 }
 
 // Identifier = initial { subseq } ;
-static cell_t *parse_identifier(SchemeY *s) {
+static cell *parse_identifier(SchemeY *s) {
   while (issubseq(s->lookahead)) {
     save(s, tolower(s->lookahead));
     next(s);
@@ -126,10 +126,10 @@ static cell_t *parse_identifier(SchemeY *s) {
     return parse_invalid(s);
 }
 
-static cell_t *parse_expr(SchemeY *s);
+static cell *parse_expr(SchemeY *s);
 
 // Parse a list expression.
-static cell_t *parse_list(SchemeY *s) {
+static cell *parse_list(SchemeY *s) {
   skip_while(s, isspace);  // skip whitespace
   if (s->lookahead == ')') {
     s->depth--;
@@ -137,15 +137,18 @@ static cell_t *parse_list(SchemeY *s) {
     return NULL;
   }
   int dotsep = (s->lookahead == '.');
-  cell_t *obj = parse_expr(s);  // TODO: handle object pinning
-  cell_t *rest = parse_list(s);
+
+
+
+  cell *obj = parse_expr(s);  // TODO: handle object pinning
+  cell *rest = parse_list(s);
   if (dotsep && rest)
     s->err = E_DOTSEP;
   return dotsep ? obj : cons(s, obj, rest);
 }
 
 // Parse an expression.
-static cell_t *parse_expr(SchemeY *s) {
+static cell *parse_expr(SchemeY *s) {
   s->tp = s->token;
   skip_while(s, isspace);  // skip whitespace
   if (s->lookahead == '(') {  // list (common)
@@ -233,7 +236,7 @@ static void read_error(SchemeY *s) {
 // set_input_port - update lineno, lookahead, etc.
 
 // Read the next expression.
-cell_t *sy_read(SchemeY *s, cell_t *port) {
+cell *sy_read(SchemeY *s, cell *port) {
   s->tp = s->token;
   s->lookahead = s->prompt ? '\n' : EOF;
   s->lineno = 1;
@@ -241,7 +244,7 @@ cell_t *sy_read(SchemeY *s, cell_t *port) {
   s->err = E_OK;
 
   next(s);
-  cell_t *expr = parse_expr(s);
+  cell *expr = parse_expr(s);
 
   if (s->lookahead == EOF)
     return sy_intern(s, "#!eof");
@@ -253,9 +256,9 @@ cell_t *sy_read(SchemeY *s, cell_t *port) {
   return expr;
 }
 
-static void write_obj(cell_t *obj, FILE *stream);
+static void write_obj(cell *obj, FILE *stream);
 
-static void write_list(cell_t *obj, FILE *stream) {
+static void write_list(cell *obj, FILE *stream) {
   write_obj(car(obj), stream);
   if (cdr(obj)) {
     if (islist(cdr(obj))) {
@@ -269,8 +272,8 @@ static void write_list(cell_t *obj, FILE *stream) {
   }
 }
 
-static void write_vector(cell_t *obj, FILE *stream) {
-  cell_t *items = as(obj).vector->items;
+static void write_vector(cell *obj, FILE *stream) {
+  cell *items = as(obj).vector->items;
   size_t len = as(obj).vector->len;
   for (size_t i = 0; i < len - 1; i++) {
     write_obj(items + i, stream);
@@ -280,7 +283,7 @@ static void write_vector(cell_t *obj, FILE *stream) {
 }
 
 // TODO: handle quote, quasiquote, unquote, unquote-splicing, vector, etc.
-static void write_obj(cell_t *obj, FILE *stream) {
+static void write_obj(cell *obj, FILE *stream) {
   if (!obj)
     fprintf(stream, "()");
   else if (islist(obj)) {
@@ -332,14 +335,14 @@ static void write_obj(cell_t *obj, FILE *stream) {
 }
 
 // Print an object to stdout.
-void print_obj(cell_t *obj) {
+void print_obj(cell *obj) {
   write_obj(obj, stdout);
   fputc('\n', stdout);
 }
 
 // Write an object to given/default output port.
-cell_t *sy_write(SchemeY *s, cell_t *args) {
-  cell_t *port = cdr(args) ? car(cdr(args)) : s->outport;
+cell *sy_write(SchemeY *s, cell *args) {
+  cell *port = cdr(args) ? car(cdr(args)) : s->outport;
   FILE *stream = as(port).port;
   write_obj(car(args), stream);
   fputc('\n', stream);

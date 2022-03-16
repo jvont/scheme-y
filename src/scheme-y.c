@@ -20,12 +20,13 @@ int main(int argc, char **argv) {
     s->prompt = 1;
     for (;;) {
       s->err = E_OK;
-      
-      cell_t *expr = sy_read(s, NULL);
-      printf("after read: %zu cells\n", s->next - s->heap);
-      cell_t *ret = sy_eval(s, expr);
+
+      s->acc = sy_read(s, NULL);
+      s->acc = sy_eval(s, s->acc);
+      gc(s);
+
       printf("=> ");
-      print_obj(ret);
+      print_obj(s->acc);
     }
   }
   // else if (argc == 2) {  // open file (TODO: multiple files)
@@ -35,13 +36,13 @@ int main(int argc, char **argv) {
   //     return 1;
   //   }
   //   SchemeY s;
-  //   cell_t port = {
+  //   cell port = {
   //     .kind = TyPort,
   //     .marked = true,
   //     .as.port = {.stream = fp, .mode = "r"}
   //   };
-  //   cell_t *expr = syR_parse(&s, &port);
-  //   // cell_t *res = eval(expr, e);
+  //   cell *expr = syR_parse(&s, &port);
+  //   // cell *res = eval(expr, e);
   //   if (expr) {
   //     printf("=> ");
   //     write_obj(expr);

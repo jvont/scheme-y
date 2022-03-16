@@ -8,10 +8,10 @@
 
 #include "object.h"
 
-void print_obj(cell_t *obj);
+void print_obj(cell *obj);
 
-// cell_t *sy_read_char(SchemeY *s, cell_t *port);
-cell_t *sy_read(SchemeY *s, cell_t *port);
-cell_t *sy_write(SchemeY *s, cell_t *args);
+// cell *sy_read_char(SchemeY *s, cell *port);
+cell *sy_read(SchemeY *s, cell *port);
+cell *sy_write(SchemeY *s, cell *args);
 
 #endif

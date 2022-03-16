@@ -13,22 +13,24 @@
 
 #include <stdlib.h>
 
-// TODO: dynamic resize
-// TODO: ensure allocated strings are cleaned up properly
-// TODO: move heap directly to state
+#define cellsize(s) ((s + sizeof(cell) - 1) / sizeof(cell))
 
-typedef struct heap {
-  cell_t *from, *to;
-  cell_t *next;
-  size_t semi;  // semi-space size
-} heap_t;
+// #define BLOCK_SIZE 128
 
-cell_t *obj_alloc(SchemeY *s);
+// typedef struct generation {
+//   cell *from, *to;
+//   cell *next;
+//   size_t semi;  // semi-space size
+// } generation;
 
+// extern generation *generations;
+// extern generation *g0;
+
+cell *obj_alloc(SchemeY *s);
+
+void *heap_malloc(SchemeY *s, size_t size);
 void *heap_calloc(SchemeY *s, size_t n, size_t size);
-void *heap_malloc(SchemeY *s, size_t n);
-char *heap_strdup(SchemeY *s, char *src);
-char *heap_strndup(SchemeY *s, char *src, size_t n);
+// void *heap_realloc(SchemeY *s, void *ptr, size_t size);
 
 // void gc(SchemeY *s, int generation);
 void gc(SchemeY *s);

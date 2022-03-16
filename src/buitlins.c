@@ -4,14 +4,14 @@
 #include <math.h>
 #include <stdlib.h>
 
-// cell_t *sy_car(SchemeY *s, cell_t *arg) { return car(car(arg)); }
-// cell_t *sy_cdr(SchemeY *s, cell_t *arg) { return car(car(arg)); }
-// cell_t *sy_cons(SchemeY *s, cell_t *args) { return cons(s, car(args), car(cdr(args))); }
+// cell *sy_car(SchemeY *s, cell *arg) { return car(car(arg)); }
+// cell *sy_cdr(SchemeY *s, cell *arg) { return car(car(arg)); }
+// cell *sy_cons(SchemeY *s, cell *args) { return cons(s, car(args), car(cdr(args))); }
 
-cell_t *sy_add(SchemeY *s, cell_t *args) {
-  cell_t *r = mk_int(s, 0);
+cell *sy_add(SchemeY *s, cell *args) {
+  cell *r = mk_int(s, 0);
   for (; args; args = cdr(args)) {
-    cell_t *a = car(args);
+    cell *a = car(args);
     if (isint(a)) {
       if (isint(r))
         as(r).integer += as(a).integer;
@@ -29,10 +29,10 @@ cell_t *sy_add(SchemeY *s, cell_t *args) {
   return r;
 }
 
-cell_t *sy_sub(SchemeY *s, cell_t *args) {
-  cell_t *r = mk_int(s, 0);
+cell *sy_sub(SchemeY *s, cell *args) {
+  cell *r = mk_int(s, 0);
   for (; args; args = cdr(args)) {
-    cell_t *a = car(args);
+    cell *a = car(args);
     if (isint(a)) {
       if (isint(r))
         as(r).integer -= as(a).integer;
@@ -50,8 +50,8 @@ cell_t *sy_sub(SchemeY *s, cell_t *args) {
   return r;
 }
 
-cell_t *sy_mul(SchemeY *s, cell_t *args) {
-  cell_t *r, *a = car(args);
+cell *sy_mul(SchemeY *s, cell *args) {
+  cell *r, *a = car(args);
   if (isint(a))
     r = mk_int(s, as(a).integer);
   else if (isreal(a))
@@ -77,8 +77,8 @@ cell_t *sy_mul(SchemeY *s, cell_t *args) {
   return r;
 }
 
-cell_t *sy_div(SchemeY *s, cell_t *args) {
-  cell_t *r, *a = car(args);
+cell *sy_div(SchemeY *s, cell *args) {
+  cell *r, *a = car(args);
   if (isint(a))
     r = mk_int(s, as(a).integer);
   else if (isreal(a))

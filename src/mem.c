@@ -4,12 +4,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#define cellsize(s) ((s + sizeof(cell_t) - 1) / sizeof(cell_t))
 #define isfrom(s,c) ((c) >= (s)->heap && (c) < (s)->heap + (s)->semi)
 
 // Allocate a single cell.
-cell_t *obj_alloc(SchemeY *s) {
-  return heap_malloc(s, sizeof(cell_t));
+cell *obj_alloc(SchemeY *s) {
+  return heap_malloc(s, sizeof(cell));
 }
 
 // Allocate size bytes of cell-aligned memory.
@@ -24,7 +23,7 @@ void *heap_malloc(SchemeY *s, size_t size) {
       exit(1);
     }
   }
-  cell_t *c = s->next;
+  cell *c = s->next;
   s->next += n;
   // printf("  heap: %zu cells\n", s->next - s->heap);
   return c;
@@ -36,38 +35,15 @@ void *heap_calloc(SchemeY *s, size_t n, size_t size) {
   return !p ? NULL : memset(p, 0, n * size);
 }
 
-// Duplicate a null-terminated string.
-char *heap_strdup(SchemeY *s, char *src) {
-  return heap_strndup(s, src, strlen(src));
-}
-
-// Duplicate a string of length n (null character excluded).
-char *heap_strndup(SchemeY *s, char *src, size_t n) {
-  char *dest = heap_malloc(s, n + 1);
-  return strcpy(dest, src);
-}
-
-// Dynamically resize the heap
-// static void resize(heap_t *h, size_t size) {
-
-// }
-
-// Copy a reference to head and leave behind its forward address.
-void set_fwd(SchemeY *s, cell_t *c) {
-  *s->next = *c;
-  type(c) = T_FWD;
-  as(c).fwd = s->next++;
-}
-
 // Copy object reference to the to-space.
-static void copy_obj(SchemeY *s, cell_t **p) {
-  cell_t *c = *p;
+static void copy_obj(SchemeY *s, cell **p) {
+  cell *c = *p;
   if (!c) return;
   else if (isfwd(c)) {  // already copied
     *p = as(c).fwd;
   }
   else {
-    cell_t *fwd = s->next++;
+    cell *fwd = s->next++;
     *fwd = *c;
     if (islist(c)) {  // recursively copy list
       copy_obj(s, &car(fwd));
@@ -75,8 +51,11 @@ static void copy_obj(SchemeY *s, cell_t **p) {
     }
     else switch (type(c)) {
       case T_STRING:
-      case T_SYMBOL:
-        as(fwd).string = heap_strdup(s, as(c).string);
+      case T_SYMBOL: {
+        size_t n = strlen(as(c).string) - sizeof(size_t) + 1;
+        char *dest = heap_malloc(s, n);
+        strcpy(as(fwd).string, as(c).string);
+      }
         break;
       case T_VECTOR:
       case T_TABLE:
@@ -97,7 +76,7 @@ void gc(SchemeY *s) {
   printf("before gc: %zu cells\n", s->next - s->heap);
 
   /* swap semi-spaces */
-  cell_t *swap = s->heap;
+  cell *swap = s->heap;
   s->heap = s->heap2;
   s->heap2 = swap;
   s->next = s->heap;
@@ -106,12 +85,14 @@ void gc(SchemeY *s) {
   copy_obj(s, &s->inport);
   copy_obj(s, &s->outport);
 
-  cell_t *cur = s->globals->items;
-  cell_t *end = cur + s->globals->size;
+  cell *cur = s->globals->items;
+  cell *end = cur + s->globals->size;
   for (; cur < end; cur++) {
     copy_obj(s, &car(cur));
     copy_obj(s, &cdr(cur));
   }
+
+  copy_obj(s, &s->acc);
 
   printf("after gc: %zu cells\n", s->next - s->heap);
 }

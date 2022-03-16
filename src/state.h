@@ -6,8 +6,8 @@
 
 #include "object.h"
 
-#define GLOBAL_ENV_SIZE 8
-#define HEAP_SIZE 32
+#define GLOBAL_ENV_SIZE 128
+#define HEAP_SIZE 1024
 
 enum {
   E_OK,
@@ -17,22 +17,28 @@ enum {
   E_RANGE,
 };
 
-struct SchemeY {
+// enum {
+//   CONST_T,
+//   CONST_F,
+//   CONST_EOF,
+// };
+
+struct SchemeY_ {
   /* global variables */
-  vector_t *globals;  // top-level environment
-  cell_t *inport;  // default input port
-  cell_t *outport;  // default output port
+  vector *globals;  // top-level environment
+  cell *inport;  // default input port
+  cell *outport;  // default output port
 
   /* registers */
-  cell_t *env;  // environment stack
-  cell_t *eval;  // current code
-  cell_t *args;  // closure arguments
-  cell_t *acc;  // accumulator
+  cell *env;  // environment stack
+  cell *eval;  // current code
+  cell *args;  // closure arguments
+  cell *acc;  // accumulator
 
   /* managed heap */
   // heap_t *g0, *g1;
-  cell_t *heap, *heap2;  // semi-spaces
-  cell_t *next;  // next free space
+  cell *heap, *heap2;  // semi-spaces
+  cell *next;  // next free space
   size_t semi;  // semi-space size
 
   /* reader state */
@@ -48,14 +54,14 @@ struct SchemeY {
 void sy_init(SchemeY *s);
 void sy_shutdown(SchemeY *s);
 
-// cell_t *syS_addfn(SchemeY *s, cell_t *var, ffun *fn);
+// cell *syS_addfn(SchemeY *s, cell *var, ffun *fn);
 
-cell_t *sy_lookup(SchemeY *s, cell_t *var);
-cell_t *sy_bind(SchemeY *s, cell_t *var, cell_t *val);
+cell *sy_lookup(SchemeY *s, cell *var);
+cell *sy_bind(SchemeY *s, cell *var, cell *val);
 
-cell_t *sy_intern(SchemeY *s, char *sym);
-cell_t *sy_intern_bind(SchemeY *s, char *sym, cell_t *val);
+cell *sy_intern(SchemeY *s, char *sym);
+cell *sy_intern_bind(SchemeY *s, char *sym, cell *val);
 
-cell_t *sy_eval(SchemeY *s, cell_t *expr);
+cell *sy_eval(SchemeY *s, cell *expr);
 
 #endif

@@ -1,6 +1,6 @@
 /*
 ** Scheme object representation.
-** Every scheme object is either an atom or cons cell. Atoms are tagged
+** Every scheme cell contains either an atom or list. Atoms are tagged
 ** unions, while cons cells contain two pointers (car and cdr) to other
 ** Scheme objects. An atom's tag shares space with the car pointer of
 ** the cons cell, relying on the assumption that memory addresses below
@@ -12,17 +12,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct SchemeY SchemeY;
-typedef union cell cell_t;
+typedef struct SchemeY_ SchemeY;
+typedef union cell_ cell;
+typedef struct vector_ vector;
 
-typedef cell_t *(ffun_t)(SchemeY *, cell_t *);
+typedef cell *(ffun_t)(SchemeY *, cell *);
 
-typedef struct vector {
-  cell_t *items;
-  size_t len, size;
-} vector_t;
-
-// typedef struct port {
+// typedef struct port_ {
 //   enum {
 //     P_FREE = 0,
 //     P_FILE = 1,
@@ -42,7 +38,7 @@ typedef struct vector {
 //       char *end;
 //     } buffer;
 //   } as;
-// } port_t;
+// } port;
 
 enum {
   T_INT = 1,
@@ -57,10 +53,10 @@ enum {
   T_FWD,  /* forwarding pointer */
 };
 
-union cell {
+union cell_ {
   struct {
-    cell_t *car;
-    cell_t *cdr;
+    cell *car;
+    cell *cdr;
   } list;
   struct {
     size_t type;  /* car-aligned */
@@ -68,23 +64,27 @@ union cell {
       long integer;
       float real;
       int character;
-      char *string;
+      char string[1];  /* store in cdr space */
       ffun_t *ffun;
-      vector_t *vector;
+      vector *vector;
       FILE *port;
-      cell_t *fwd;
+      cell *fwd;
     } as;
   } atom;
 };
 
+struct vector_ {
+  size_t len, size;
+  cell items[];  /* variable-sized array (C99) */
+};
+
 // #define get(c) (!(c) || (c)->atom.type != T_FWD ? (c) : (c)->atom.as.fwd)
-#define get(c) (c)
 
-#define car(c) (get(c)->list.car)
-#define cdr(c) (get(c)->list.cdr)
+#define car(c) ((c)->list.car)
+#define cdr(c) ((c)->list.cdr)
 
-#define type(c) (get(c)->atom.type)
-#define as(c)   (get(c)->atom.as)
+#define type(c) ((c)->atom.type)
+#define as(c)   ((c)->atom.as)
 
 #define islist(c)   (c && type(c) > 255)
 #define isatom(c)   (!c || (T_INT <= type(c) && type(c) <= T_PORT))
@@ -102,29 +102,29 @@ union cell {
 #define isfwd(c)    (type(c) == T_FWD)
 
 #define set_cons(c,a,d) (car(c) = a, cdr(c) = d)
-#define set_int(c,i)    (type(c) == T_INT, as(c).integer = i)
-#define set_real(c,r)   (type(c) == T_REAL, as(c).real = r)
-#define set_char(c,ch)  (type(c) == T_CHAR, as(c).character = ch)
-#define set_string(c,s) (type(c) == T_STRING, as(c).string = s)
-#define set_symbol(c,s) (type(c) == T_SYMBOL, as(c).string = s)
-#define set_ffun(c,f)   (type(c) == T_FFUN, as(c).ffun = f)
-#define set_vector(c,v) (type(c) == T_VECTOR, as(c).vector = v)
-#define set_table(c,v)  (type(c) == T_TABLE, as(c).vector = v)
-#define set_port(c,p)   (type(c) == T_PORT, as(c).port = p)
-// cell_t *set_fwd(cell_t *c, cell_t *f);
+#define set_int(c,i)    (type(c) = T_INT, as(c).integer = i)
+#define set_real(c,r)   (type(c) = T_REAL, as(c).real = r)
+#define set_char(c,ch)  (type(c) = T_CHAR, as(c).character = ch)
+#define set_string(c,s) (type(c) = T_STRING, as(c).string = s)
+#define set_symbol(c,s) (type(c) = T_SYMBOL, as(c).string = s)
+#define set_ffun(c,f)   (type(c) = T_FFUN, as(c).ffun = f)
+#define set_vector(c,v) (type(c) = T_VECTOR, as(c).vector = v)
+#define set_table(c,v)  (type(c) = T_TABLE, as(c).vector = v)
+#define set_port(c,p)   (type(c) = T_PORT, as(c).port = p)
+// cell *set_fwd(cell *c, cell *f);
 
-cell_t *cons(SchemeY *s, cell_t *a, cell_t *d);
-cell_t *mk_int(SchemeY *s, long i);
-cell_t *mk_real(SchemeY *s, float r);
-cell_t *mk_char(SchemeY *s, int ch);
-cell_t *mk_string(SchemeY *s, char *str);
-cell_t *mk_symbol(SchemeY *s, char *sym);
-cell_t *mk_ffun(SchemeY *s, ffun_t *f);
-cell_t *mk_vector(SchemeY *s, size_t sz);
-cell_t *mk_table(SchemeY *s, size_t sz);
-cell_t *mk_port(SchemeY *s, FILE *p);
+cell *cons(SchemeY *s, cell *a, cell *d);
+cell *mk_int(SchemeY *s, long i);
+cell *mk_real(SchemeY *s, float r);
+cell *mk_char(SchemeY *s, int ch);
+cell *mk_string(SchemeY *s, char *str);
+cell *mk_symbol(SchemeY *s, char *sym);
+cell *mk_ffun(SchemeY *s, ffun_t *f);
+cell *mk_vector(SchemeY *s, size_t sz);
+cell *mk_table(SchemeY *s, size_t sz);
+cell *mk_port(SchemeY *s, FILE *p);
 
-vector_t *mk_vector_t(SchemeY *s, size_t sz);
+vector *mk_vector_t(SchemeY *s, size_t sz);
 
 
 /* Hash table methods */
