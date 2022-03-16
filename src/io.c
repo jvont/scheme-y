@@ -270,8 +270,8 @@ static void write_list(cell_t *obj, FILE *stream) {
 }
 
 static void write_vector(cell_t *obj, FILE *stream) {
-  cell_t *items = as(obj).vector->_items;
-  size_t len = as(obj).vector->_len;
+  cell_t *items = as(obj).vector->items;
+  size_t len = as(obj).vector->len;
   for (size_t i = 0; i < len - 1; i++) {
     write_obj(items + i, stream);
     fputc(' ', stream);

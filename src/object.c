@@ -26,8 +26,8 @@ cell_t *mk_port(SchemeY *s, FILE *p) { return set_port(obj_alloc(s), p); }
 
 vector_t *mk_vector_t(SchemeY *s, size_t sz) {
   vector_t *v = heap_malloc(s, sizeof(vector_t));
-  v->_items = heap_calloc(s, sz, sizeof(cell_t));
-  v->_len = 0;
-  v->_size = sz;
+  v->items = heap_calloc(s, sz, sizeof(cell_t));
+  v->len = 0;
+  v->size = sz;
   return v;
 }

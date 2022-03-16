@@ -9,10 +9,10 @@ void sy_init(SchemeY *s) {
   /* global variables (internal structure, never referenced) */
   s->globals = malloc(sizeof(vector_t));
   if (!s->globals) exit(1);
-  s->globals->_items = calloc(8, sizeof(cell_t));
-  if (!s->globals->_items) exit(1);
-  s->globals->_len = 0;
-  s->globals->_size = 8;
+  s->globals->items = calloc(8, sizeof(cell_t));
+  if (!s->globals->items) exit(1);
+  s->globals->len = 0;
+  s->globals->size = 8;
 
   /* managed heap */
   s->heap = malloc(2 * HEAP_SIZE * sizeof(cell_t));
@@ -36,7 +36,7 @@ void sy_shutdown(SchemeY *s) {
   free(s->heap < s->heap2 ? s->heap : s->heap2);
   free(s->token);
   // if (s->globals)
-  //   free(s->globals._items);
+  //   free(s->globals.items);
   // free(s->globals);
   // free(s->inport);
   // free(s->outport);
@@ -55,9 +55,9 @@ static unsigned int hash(const char *s) {
 // Lookup a given variable by address and return its entry, or NULL if not found.
 static cell_t *sy_lookup_entry(SchemeY *s, cell_t *var) {
   vector_t *v = s->globals;
-  unsigned int size = v->_size;
+  unsigned int size = v->size;
   unsigned int i = hash(as(var).string) % size;
-  cell_t *ev = v->_items;
+  cell_t *ev = v->items;
   for (; car(ev + i); i = (i + 1) % size) {
     if (car(ev + i) == var)
       return ev + i;
@@ -83,9 +83,9 @@ cell_t *sy_bind(SchemeY *s, cell_t *var, cell_t *val) {
 // Find/store a symbol, returning its associated entry.
 cell_t *sy_intern_entry(SchemeY *s, char *sym) {
   vector_t *v = s->globals;
-  unsigned int size = v->_size;
+  unsigned int size = v->size;
   unsigned int i = hash(sym) % size;
-  cell_t *ev = v->_items;
+  cell_t *ev = v->items;
   for (; car(ev + i); i = (i + 1) % size) {
     if (strcmp(sym, as(car(ev + i)).string) == 0)
       return ev + i;

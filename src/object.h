@@ -18,8 +18,8 @@ typedef union cell cell_t;
 typedef cell_t *(ffun_t)(SchemeY *, cell_t *);
 
 typedef struct vector {
-  cell_t *_items;
-  size_t _len, _size;
+  cell_t *items;
+  size_t len, size;
 } vector_t;
 
 // typedef struct port {
