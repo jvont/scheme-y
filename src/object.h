@@ -101,16 +101,16 @@ union cell {
 #define isport(c)   (type(c) == T_PORT)
 #define isfwd(c)    (type(c) == T_FWD)
 
-cell_t *set_cons(cell_t *c, cell_t *a, cell_t *d);
-cell_t *set_int(cell_t *c, long i);
-cell_t *set_real(cell_t *c, float r);
-cell_t *set_char(cell_t *c, int ch);
-cell_t *set_string(cell_t *c, char *s);
-cell_t *set_symbol(cell_t *c, char *s);
-cell_t *set_ffun(cell_t *c, ffun_t *f);
-cell_t *set_vector(cell_t *c, vector_t *v);
-cell_t *set_table(cell_t *c, vector_t *v);
-cell_t *set_port(cell_t *c, FILE *p);
+#define set_cons(c,a,d) (car(c) = a, cdr(c) = d)
+#define set_int(c,i)    (type(c) == T_INT, as(c).integer = i)
+#define set_real(c,r)   (type(c) == T_REAL, as(c).real = r)
+#define set_char(c,ch)  (type(c) == T_CHAR, as(c).character = ch)
+#define set_string(c,s) (type(c) == T_STRING, as(c).string = s)
+#define set_symbol(c,s) (type(c) == T_SYMBOL, as(c).string = s)
+#define set_ffun(c,f)   (type(c) == T_FFUN, as(c).ffun = f)
+#define set_vector(c,v) (type(c) == T_VECTOR, as(c).vector = v)
+#define set_table(c,v)  (type(c) == T_TABLE, as(c).vector = v)
+#define set_port(c,p)   (type(c) == T_PORT, as(c).port = p)
 // cell_t *set_fwd(cell_t *c, cell_t *f);
 
 cell_t *cons(SchemeY *s, cell_t *a, cell_t *d);
