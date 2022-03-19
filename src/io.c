@@ -126,82 +126,96 @@ static cell *parse_identifier(SchemeY *s) {
     return parse_invalid(s);
 }
 
-static cell *parse_expr(SchemeY *s);
+static void parse_expr(SchemeY *s, cell **p);
 
 // Parse a list expression.
-static cell *parse_list(SchemeY *s) {
+static void parse_list(SchemeY *s, cell **tail) {
   skip_while(s, isspace);  // skip whitespace
   if (s->lookahead == ')') {
     s->depth--;
     next(s);
-    return NULL;
+    return;
   }
   int dotsep = (s->lookahead == '.');
+  
+  
+  parse_expr(s, tail);
+  *tail = cons(s, *tail, NULL);
+  
+  parse_list(s, &cdr(*tail));
 
-
-
-  cell *obj = parse_expr(s);  // TODO: handle object pinning
-  cell *rest = parse_list(s);
-  if (dotsep && rest)
-    s->err = E_DOTSEP;
-  return dotsep ? obj : cons(s, obj, rest);
+  // if (dotsep && rest)
+  //   s->err = E_DOTSEP;
+  // return dotsep ? obj : cons(s, obj, rest);
 }
 
 // Parse an expression.
-static cell *parse_expr(SchemeY *s) {
+static void parse_expr(SchemeY *s, cell **p) {
   s->tp = s->token;
   skip_while(s, isspace);  // skip whitespace
-  if (s->lookahead == '(') {  // list (common)
-    s->depth++;
-    next(s);
-    // TODO: handle illegal dot separator at start of list
-    return parse_list(s);
-  }
-  else if (isinitial(s->lookahead))  // identifier
-    return parse_identifier(s);
+
+  if (isinitial(s->lookahead))  // identifier
+    *p = parse_identifier(s);
   else if (isdigit(s->lookahead))  // number
-    return parse_number(s);
+    *p = parse_number(s);
   else switch (s->lookahead) {
+    case '(':  // list
+      s->depth++;
+      next(s);
+      parse_list(s, p);
+      break;
     case '+': case '-':
       save_next(s);
       if (s->lookahead == '.' || isdigit(s->lookahead))  // ( + | - ) [ . ] { digit }
-        return parse_number(s);
+        *p = parse_number(s);
       else if (isdelim(s->lookahead))  // ( + | - )
-        return parse_identifier(s);
+        *p = parse_identifier(s);
       break;
     case '.':
       save_next(s);
-      if (isdelim(s->lookahead))  // dot separator (if list)
-        return (s->depth) ? parse_expr(s) : parse_invalid(s);
-      else if (isinitial(s->lookahead) || s->lookahead == '.')  // .. { subseq }
-        return parse_identifier(s);
+      if (isinitial(s->lookahead) || s->lookahead == '.')  // .. { subseq }
+        *p = parse_identifier(s);
       else if (isdigit(s->lookahead))  // . { digit }
-        return parse_number(s);
+        *p = parse_number(s);
       break;
     case '"':
-      return parse_string(s);  // " { char | esc } "
+      *p = parse_string(s);  // " { char | esc } "
+      break;
     case '\'':
       next(s);
-      return cons(s, sy_intern(s, "quote"), cons(s, parse_expr(s), NULL));
+      parse_expr(s, p);
+      *p = cons(s, *p, NULL);
+      *p = cons(s, sy_intern(s, "quote"), *p);
+      break;
     case '`':
       next(s);
-      return cons(s, sy_intern(s, "quasiquote"), cons(s, parse_expr(s), NULL));
+      parse_expr(s, p);
+      *p = cons(s, *p, NULL);
+      *p = cons(s, sy_intern(s, "quasiquote"), *p);
+      break;
     case ',':
       next(s);
       if (s->lookahead == '@') {
         next(s);
-        return cons(s, sy_intern(s, "unquote-splicing"), cons(s, parse_expr(s), NULL));
+        parse_expr(s, p);
+        *p = cons(s, *p, NULL);
+        *p = cons(s, sy_intern(s, "unquote-splicing"), *p);
       }
-      else return cons(s, sy_intern(s, "unquote"), cons(s, parse_expr(s), NULL));
+      else {
+        parse_expr(s, p);
+        *p = cons(s, *p, NULL);
+        *p = cons(s, sy_intern(s, "unquote"), *p);
+      }
+      break;
     case '#':
       next(s);
       switch (s->lookahead) {
         case 't':
           next(s);
-          return sy_intern(s, "#t");
+          *p = sy_intern(s, "#t");
         case 'f':
           next(s);
-          return sy_intern(s, "#f");
+          *p = sy_intern(s, "#f");
         case '|':  // block comment #| ... |#
         case '\\':  // character literal (handle special cases)
         case '(':  // vector literal
@@ -212,12 +226,12 @@ static cell *parse_expr(SchemeY *s) {
       }
       break;
     case EOF:
-      s->err = E_EOF;
-      return NULL;
+      *p = s->depth ? parse_invalid(s) : sy_intern(s, "#!eof");
+      break;
     default:
+      *p = parse_invalid(s);
       break;
   }
-  return parse_invalid(s);
 }
 
 static const char *err_msgs[] = {
@@ -244,16 +258,14 @@ cell *sy_read(SchemeY *s, cell *port) {
   s->err = E_OK;
 
   next(s);
-  cell *expr = parse_expr(s);
-
-  if (s->lookahead == EOF)
-    return sy_intern(s, "#!eof");
+  s->acc = NULL;
+  parse_expr(s, &s->acc);
 
   if (s->err) {
     read_error(s);
     return NULL;
   }
-  return expr;
+  return s->acc;
 }
 
 static void write_obj(cell *obj, FILE *stream);
@@ -293,7 +305,7 @@ static void write_obj(cell *obj, FILE *stream) {
   }
   else switch (type(obj)) {
     case T_INT:
-      fprintf(stream, "%ld", as(obj).integer);
+      fprintf(stream, "%d", as(obj).integer);
       break;
     case T_REAL:
       if (as(obj).real < 1e-3 || as(obj).real > 1e6)
