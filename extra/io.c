@@ -20,7 +20,7 @@ static int issubseq(int c) { return isalnum(c) || strchr("!$%&*/:<=>?@^_~+-.", c
 #define save_next(s) (save(s, s->lookahead), next(s))
 
 // Get user input, printing prompt to stdout.
-static void input_prompt(SchemeY *s) {
+static void input_prompt(State *s) {
   if (s->depth) {  // print prompt based on nesting
     for (size_t i = 0; i <= s->depth; i++)
       putc('.', stdout);
@@ -34,7 +34,7 @@ static void input_prompt(SchemeY *s) {
 }
 
 // Get the next character from file/interactive prompt.
-static void next(SchemeY *s) {
+static void next(State *s) {
   if (s->prompt) {  // prompt
     if (s->lookahead == '\n')
       input_prompt(s);
@@ -47,12 +47,12 @@ static void next(SchemeY *s) {
   }
 }
 
-// cell *sy_read_char(SchemeY *s, cell *port) {
+// Cell *sy_read_char(State *s, Cell *port) {
 
 // }
 
 // Save character to token buffer, resize buffer if needed.
-static void save(SchemeY *s, int c) {
+static void save(State *s, int c) {
   if (s->tp >= s->tend) {  // resize
     if (s->tend - s->token >= SIZE_MAX / 2) {
       fprintf(stderr, "maximum buffer size reached\n");
@@ -73,14 +73,14 @@ static void save(SchemeY *s, int c) {
 }
 
 // Scan an invalid token until next delimiter.
-static cell *parse_invalid(SchemeY *s) {
+static Cell *parse_invalid(State *s) {
   s->err = E_TOKEN;
   save_until(s, isdelim);
   return NULL;
 }
 
 // Number = integer | real ;
-static cell *parse_number(SchemeY *s) {
+static Cell *parse_number(State *s) {
   save_until(s, isdelim);
   errno = 0;  // reset errno before call
   char *nptr = s->token;
@@ -91,13 +91,13 @@ static cell *parse_number(SchemeY *s) {
     if (errno == ERANGE || *endptr != '\0')
       return parse_invalid(s);  // ERROR: number too large
     else
-      return mk_real(s, r);
+      return real(r);
   }
-  return mk_int(s, i);
+  return integer(i);
 }
 
 // String = " { ( character | escape ) - " } " ;
-static cell *parse_string(SchemeY *s) {
+static Cell *parse_string(State *s) {
   next(s);
   while (s->lookahead != '"') {
     if (s->lookahead == '\\')  // string escape
@@ -110,11 +110,11 @@ static cell *parse_string(SchemeY *s) {
   }
   *s->tp = '\0';
   next(s);
-  return mk_string(s, s->token);
+  return string(s->token);
 }
 
 // Identifier = initial { subseq } ;
-static cell *parse_identifier(SchemeY *s) {
+static Cell *parse_identifier(State *s) {
   while (issubseq(s->lookahead)) {
     save(s, tolower(s->lookahead));
     next(s);
@@ -126,96 +126,99 @@ static cell *parse_identifier(SchemeY *s) {
     return parse_invalid(s);
 }
 
-static void parse_expr(SchemeY *s, cell **p);
+static void push(State *s, Cell *obj) {
+
+  Cell *ls = cons(obj, NULL);
+  cdr(ls) = s->stack_head;
+  
+}
+
+static void append(State *s, Cell *obj) {
+
+  Cell *ls = cons(obj, NULL);
+  if (s->stack_tail)
+    cdr(s->stack_tail) = ls;
+  else
+    s->stack_tail = ls;
+
+}
+
+static Cell *parse_expr(State *s);
 
 // Parse a list expression.
-static void parse_list(SchemeY *s, cell **tail) {
+static Cell *parse_list(State *s) {
   skip_while(s, isspace);  // skip whitespace
   if (s->lookahead == ')') {
     s->depth--;
     next(s);
-    return;
+    return NULL;
   }
   int dotsep = (s->lookahead == '.');
-  
-  
-  parse_expr(s, tail);
-  *tail = cons(s, *tail, NULL);
-  
-  parse_list(s, &cdr(*tail));
 
-  // if (dotsep && rest)
-  //   s->err = E_DOTSEP;
-  // return dotsep ? obj : cons(s, obj, rest);
+  Cell *obj = parse_expr(s);
+
+  Cell *rest = parse_list(s);
+
+  if (dotsep && rest)
+    s->err = E_DOTSEP;
+  return dotsep ? obj : cons(obj, rest);
 }
 
 // Parse an expression.
-static void parse_expr(SchemeY *s, cell **p) {
+static Cell *parse_expr(State *s) {
   s->tp = s->token;
   skip_while(s, isspace);  // skip whitespace
-
-  if (isinitial(s->lookahead))  // identifier
-    *p = parse_identifier(s);
+  if (s->lookahead == '(') {  // list (common)
+    s->depth++;
+    next(s);
+    // TODO: handle illegal dot separator at start of list
+    return parse_list(s);
+  }
+  else if (isinitial(s->lookahead))  // identifier
+    return parse_identifier(s);
   else if (isdigit(s->lookahead))  // number
-    *p = parse_number(s);
+    return parse_number(s);
   else switch (s->lookahead) {
-    case '(':  // list
-      s->depth++;
-      next(s);
-      parse_list(s, p);
-      break;
     case '+': case '-':
       save_next(s);
       if (s->lookahead == '.' || isdigit(s->lookahead))  // ( + | - ) [ . ] { digit }
-        *p = parse_number(s);
+        return parse_number(s);
       else if (isdelim(s->lookahead))  // ( + | - )
-        *p = parse_identifier(s);
+        return parse_identifier(s);
       break;
     case '.':
       save_next(s);
-      if (isinitial(s->lookahead) || s->lookahead == '.')  // .. { subseq }
-        *p = parse_identifier(s);
+      if (isdelim(s->lookahead))  // dot separator (if list)
+        return (s->depth) ? parse_expr(s) : parse_invalid(s);
+      else if (isinitial(s->lookahead) || s->lookahead == '.')  // .. { subseq }
+        return parse_identifier(s);
       else if (isdigit(s->lookahead))  // . { digit }
-        *p = parse_number(s);
+        return parse_number(s);
       break;
     case '"':
-      *p = parse_string(s);  // " { char | esc } "
-      break;
+      return parse_string(s);  // " { char | esc } "
     case '\'':
       next(s);
-      parse_expr(s, p);
-      *p = cons(s, *p, NULL);
-      *p = cons(s, sy_intern(s, "quote"), *p);
-      break;
+      return cons(sy_intern(s, "quote"), cons(parse_expr(s), NULL));
     case '`':
       next(s);
-      parse_expr(s, p);
-      *p = cons(s, *p, NULL);
-      *p = cons(s, sy_intern(s, "quasiquote"), *p);
-      break;
+      return cons(sy_intern(s, "quasiquote"), cons(parse_expr(s), NULL));
     case ',':
       next(s);
       if (s->lookahead == '@') {
         next(s);
-        parse_expr(s, p);
-        *p = cons(s, *p, NULL);
-        *p = cons(s, sy_intern(s, "unquote-splicing"), *p);
+        return cons(sy_intern(s, "unquote-splicing"), cons(parse_expr(s), NULL));
       }
-      else {
-        parse_expr(s, p);
-        *p = cons(s, *p, NULL);
-        *p = cons(s, sy_intern(s, "unquote"), *p);
-      }
-      break;
+      else return cons(sy_intern(s, "unquote"), cons(parse_expr(s), NULL));
     case '#':
       next(s);
       switch (s->lookahead) {
         case 't':
           next(s);
-          *p = sy_intern(s, "#t");
+          return sy_intern(s, "#t");
         case 'f':
           next(s);
-          *p = sy_intern(s, "#f");
+          return sy_intern(s, "#f");
         case '|':  // block comment #| ... |#
         case '\\':  // character literal (handle special cases)
         case '(':  // vector literal
@@ -226,12 +229,11 @@ static void parse_expr(SchemeY *s, cell **p) {
       }
       break;
     case EOF:
-      *p = s->depth ? parse_invalid(s) : sy_intern(s, "#!eof");
-      break;
+      return sy_intern(s, "#!eof");
     default:
-      *p = parse_invalid(s);
       break;
   }
+  return parse_invalid(s);
 }
 
 static const char *err_msgs[] = {
@@ -242,7 +244,7 @@ static const char *err_msgs[] = {
   [E_RANGE] = "number is out of range",
 };
 
-static void read_error(SchemeY *s) {
+static void read_error(State *s) {
   printf("Read Error: %s\n", err_msgs[s->err]);
   printf("Line %zu, at \"%s\"\n", s->lineno, s->token);
 }
@@ -250,27 +252,34 @@ static void read_error(SchemeY *s) {
 // set_input_port - update lineno, lookahead, etc.
 
 // Read the next expression.
-cell *sy_read(SchemeY *s, cell *port) {
+Cell *sy_read(State *s, Cell *port) {
   s->tp = s->token;
   s->lookahead = s->prompt ? '\n' : EOF;
   s->lineno = 1;
   s->depth = 0;
   s->err = E_OK;
 
+  // procedure:
+  // list object: head + tail
+  // append(): append item to current list (item = cons(s, obj, NULL), cdr(tail) = item, tail = cdr(tail))
+  // push(): push item onto current list (item = cons(s, obj, NULL), cdr(item) = head, head = item)
+  // parse list
+  // push() 1st element
+  // append() remaining
+
   next(s);
-  s->acc = NULL;
-  parse_expr(s, &s->acc);
+  Cell *expr = parse_expr(s);
 
   if (s->err) {
     read_error(s);
     return NULL;
   }
-  return s->acc;
+  return expr;
 }
 
-static void write_obj(cell *obj, FILE *stream);
+static void write_obj(Cell *obj, FILE *stream);
 
-static void write_list(cell *obj, FILE *stream) {
+static void write_list(Cell *obj, FILE *stream) {
   write_obj(car(obj), stream);
   if (cdr(obj)) {
     if (islist(cdr(obj))) {
@@ -284,8 +293,8 @@ static void write_list(cell *obj, FILE *stream) {
   }
 }
 
-static void write_vector(cell *obj, FILE *stream) {
-  cell *items = as(obj).vector->items;
+static void write_vector(Cell *obj, FILE *stream) {
+  Cell *items = as(obj).vector->items;
   size_t len = as(obj).vector->len;
   for (size_t i = 0; i < len - 1; i++) {
     write_obj(items + i, stream);
@@ -295,7 +304,7 @@ static void write_vector(cell *obj, FILE *stream) {
 }
 
 // TODO: handle quote, quasiquote, unquote, unquote-splicing, vector, etc.
-static void write_obj(cell *obj, FILE *stream) {
+static void write_obj(Cell *obj, FILE *stream) {
   if (!obj)
     fprintf(stream, "()");
   else if (islist(obj)) {
@@ -304,7 +313,7 @@ static void write_obj(cell *obj, FILE *stream) {
     fputc(')', stream);
   }
   else switch (type(obj)) {
-    case T_INT:
+    case T_INTEGER:
       fprintf(stream, "%d", as(obj).integer);
       break;
     case T_REAL:
@@ -318,7 +327,7 @@ static void write_obj(cell *obj, FILE *stream) {
     // case BOOLEAN:
     //   fprintf(stream, getv(obj).integer ? "#t" : "#f");
     //   break;
-    case T_CHAR:
+    case T_CHARACTER:
       fprintf(stream, "%c", as(obj).character);
       break;
     case T_STRING:
@@ -347,14 +356,14 @@ static void write_obj(cell *obj, FILE *stream) {
 }
 
 // Print an object to stdout.
-void print_obj(cell *obj) {
+void print_obj(Cell *obj) {
   write_obj(obj, stdout);
   fputc('\n', stdout);
 }
 
 // Write an object to given/default output port.
-cell *sy_write(SchemeY *s, cell *args) {
-  cell *port = cdr(args) ? car(cdr(args)) : s->outport;
+Cell *sy_write(State *s, Cell *args) {
+  Cell *port = cdr(args) ? car(cdr(args)) : s->outport;
   FILE *stream = as(port).port;
   write_obj(car(args), stream);
   fputc('\n', stream);

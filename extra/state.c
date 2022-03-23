@@ -6,24 +6,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-void sy_init(SchemeY *s) {
+void sy_init(State *s) {
   /* global variables (internal structure, never referenced) */
-  size_t vs = cellsize(sizeof(vector));
-  s->globals = calloc(vs + GLOBAL_ENV_SIZE, sizeof(cell));
+  size_t vs = b2o(sizeof(Vector));
+  s->globals = calloc(vs + GLOBAL_ENV_SIZE, sizeof(Cell));
   if (!s->globals) exit(1);  
   s->globals->len = 0;
   s->globals->size = GLOBAL_ENV_SIZE;
 
-  /* managed heap */
-  s->heap = malloc(2 * HEAP_SIZE * sizeof(cell));
-  if (!s->heap) exit(1);
-  s->heap2 = s->heap + HEAP_SIZE;
-  s->next = s->heap;
-  s->semi = HEAP_SIZE;
-
   /* default ports (collected, since they may be referenced) */
-  s->inport = mk_port(s, stdin);
-  s->outport = mk_port(s, stdout);
+  s->inport = mk_port(stdin);
+  s->outport = mk_port(stdout);
 
   /* token read buffer (resizeable) */
   s->token = malloc(BUFSIZ);
@@ -31,7 +24,7 @@ void sy_init(SchemeY *s) {
   s->tend = s->token + 10;
 }
 
-void sy_shutdown(SchemeY *s) {
+void sy_shutdown(State *s) {
   free(s->heap < s->heap2 ? s->heap : s->heap2);
   free(s->token);
   // if (s->globals)
@@ -52,11 +45,11 @@ static unsigned int hash(const char *s) {
 }
 
 // Lookup a given variable by address and return its entry, or NULL if not found.
-static cell *sy_lookup_entry(SchemeY *s, cell *var) {
-  vector *v = s->globals;
+static Cell *sy_lookup_entry(State *s, Cell *var) {
+  Vector *v = s->globals;
   unsigned int size = v->size;
   unsigned int i = hash(as(var).string) % size;
-  cell *ev = v->items;
+  Cell *ev = v->items;
   for (; car(ev + i); i = (i + 1) % size) {
     if (car(ev + i) == var)
       return ev + i;
@@ -66,13 +59,13 @@ static cell *sy_lookup_entry(SchemeY *s, cell *var) {
 
 // Lookup a given variable by address and return its value, or NULL if not found.
 // FUTURE: convert to hash-table-eq/get
-cell *sy_lookup(SchemeY *s, cell *var) {
-  cell *e = sy_lookup_entry(s, var);
+Cell *sy_lookup(State *s, Cell *var) {
+  Cell *e = sy_lookup_entry(s, var);
   return (!e) ? NULL : cdr(e);
 }
 
-cell *sy_bind(SchemeY *s, cell *var, cell *val) {
-  cell *e = sy_lookup_entry(s, var);
+Cell *sy_bind(State *s, Cell *var, Cell *val) {
+  Cell *e = sy_lookup_entry(s, var);
   if (!e)  // ERROR
     return NULL;
   cdr(e) = val;
@@ -80,41 +73,41 @@ cell *sy_bind(SchemeY *s, cell *var, cell *val) {
 }
 
 // Find/store a symbol, returning its associated entry.
-cell *sy_intern_entry(SchemeY *s, char *sym) {
-  vector *v = s->globals;
+Cell *sy_intern_entry(State *s, char *sym) {
+  Vector *v = s->globals;
   unsigned int size = v->size;
   unsigned int i = hash(sym) % size;
-  cell *ev = v->items;
+  Cell *ev = v->items;
   for (; car(ev + i); i = (i + 1) % size) {
     if (strcmp(sym, as(car(ev + i)).string) == 0)
       return ev + i;
   }
-  car(ev + i) = mk_symbol(s, sym);
+  car(ev + i) = mk_symbol(sym);
   return ev + i;
 }
 
 // Find/store a symbol and return it.
-cell *sy_intern(SchemeY *s, char *sym) {
+Cell *sy_intern(State *s, char *sym) {
   return car(sy_intern_entry(s, sym));
 }
 
-cell *sy_intern_bind(SchemeY *s, char *sym, cell *val) {
-  cell *e = sy_intern_entry(s, sym);
+Cell *sy_intern_bind(State *s, char *sym, Cell *val) {
+  Cell *e = sy_intern_entry(s, sym);
   cdr(e) = val;
   return e;
 }
 
-cell *map(SchemeY *s, cell *args) {
+Cell *map(State *s, Cell *args) {
   // check arity
-  cell *fn = car(args);
+  Cell *fn = car(args);
   for (args = cdr(args); cdr(args); args = cdr(args)) {
 
   }
 }
 
-cell *apply(SchemeY *s, cell *args) {
-  cell *fn = car(args);
-  cell *body = cdr(args);
+Cell *apply(State *s, Cell *args) {
+  Cell *fn = car(args);
+  Cell *body = cdr(args);
   // switch (fn->kind) {
   //   case TyFFun:
   //   case TyClosure:
@@ -122,25 +115,25 @@ cell *apply(SchemeY *s, cell *args) {
   // }
 }
 
-cell *eval_list(SchemeY *s, cell *args) {
-  cell *first = sy_eval(s, car(args));
-  cell *rest = cdr(args) ? eval_list(s, cdr(args)) : NULL;
-  return cons(s, first, rest);
+Cell *eval_list(State *s, Cell *args) {
+  Cell *first = sy_eval(s, car(args));
+  Cell *rest = cdr(args) ? eval_list(s, cdr(args)) : NULL;
+  return cons(first, rest);
 }
 
 // Evaluate an expression.
-cell *sy_eval(SchemeY *s, cell *expr) {
+Cell *sy_eval(State *s, Cell *expr) {
   if (!expr) return NULL;  // empty
   else if (islist(expr)) {  // list
 
 
   // else return expr;
 
-    cell *p = sy_eval(s, car(expr));
+    Cell *p = sy_eval(s, car(expr));
     if (!p)
       return NULL;
     else if (isffun(p)) {  // foreign-func
-      cell *args = eval_list(s, cdr(expr));
+      Cell *args = eval_list(s, cdr(expr));
       return as(p).ffun(s, args);
     }
     else return NULL;

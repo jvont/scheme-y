@@ -4,7 +4,7 @@
 #ifndef _SCHEME_Y_H
 #define _SCHEME_Y_H
 
-typedef struct SchemeY SchemeY;
+typedef struct State State;
 
 // API goes here
 

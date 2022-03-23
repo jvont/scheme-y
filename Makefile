@@ -7,6 +7,7 @@ OBJS := $(SRCS:%.c=%.o)
 TESTS := $(wildcard tests/*.c)
 
 .PHONY: rebuild all tests clean
+.PRECIOUS: %.o
 
 # rebuild: clean all
 rebuild: clean bin/scheme-y
@@ -17,7 +18,7 @@ bin/scheme-y: $(OBJS) | bin
 	gcc $^ -o $@ $(LDFLAGS)
 
 tests: $(TESTS:tests/%.c=bin/%)
-	$^
+	for f in $^; do ./$$f; done
 
 bin/%: tests/%.o $(filter-out %scheme-y.o, $(OBJS)) | bin
 	gcc $^ -o $@

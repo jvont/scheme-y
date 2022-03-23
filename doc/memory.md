@@ -1,5 +1,8 @@
 # Memory Management
 
+David A. Moon, ‘‘Garbage collection in a large LISP system,’’ ACM Symposium on LISP and Func-
+tional Programming, pp. 235-246, ACM, 1984.     
+
 ## Object Memory Layout
 
 There are two types of objects in Scheme: lists and atoms. Lists store a `car` and `cdr` pointer to other objects, representing a singly linked list. Atoms store tagged data, including numbers, strings, arrays, function pointers, and streams.

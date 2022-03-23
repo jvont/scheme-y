@@ -1,77 +1,81 @@
 #include "object.h"
-#include "state.h"
 #include "mem.h"
 
 #include <string.h>
 
-cell *cons(SchemeY *s, cell *a, cell *d) {
-  cell *c = obj_alloc(s);
-  set_cons(c, a, d);
-  return c;
+Object *cons(Object *_car, Object *_cdr) {
+  Object *x = mem_malloc(sizeof(Object));
+  car(x) = _car;
+  cdr(x) = _cdr;
+  return (Object *)tag(x);
 }
 
-cell *mk_int(SchemeY *s, long i) {
-  cell *c = obj_alloc(s);
-  set_int(c, i);
-  return c;
+Object *integer(long i) {
+  Object *x = mem_malloc(sizeof(Object));
+  type(x) = T_INTEGER;
+  as(x).integer = i;
+  return x;
 }
 
-cell *mk_real(SchemeY *s, float r) {
-  cell *c = obj_alloc(s);
-  set_real(c, r);
-  return c;
+Object *real(float r) {
+  Object *x = mem_malloc(sizeof(Object));
+  type(x) = T_REAL;
+  as(x).real = r;
+  return x;
 }
 
-cell *mk_char(SchemeY *s, int ch) {
-  cell *c = obj_alloc(s);
-  set_char(c, ch);
-  return c;
+Object *character(int c) {
+  Object *x = mem_malloc(sizeof(Object));
+  type(x) = T_CHARACTER;
+  as(x).character = c;
+  return x;
 }
 
-cell *mk_string(SchemeY *s, char *str) {
-  size_t n = sizeof(size_t) + strlen(str) + 1;
-  cell *c = heap_malloc(s, n);
-  type(c) = T_STRING;
-  strcpy(as(c).string, str);
-  return c;
+Object *string(const char *s) {
+  Object *x = mem_malloc(sizeof(Object));
+  type(x) = T_STRING;
+  as(x).string = mem_strdup(s);
+  return x;
 }
 
-cell *mk_symbol(SchemeY *s, char *sym) {
-  cell *c = mk_string(s, sym);
-  type(c) = T_SYMBOL;
-  return c;
+Object *symbol(const char *s) {
+  Object *x = mem_malloc(sizeof(Object));
+  type(x) = T_SYMBOL;
+  as(x).string = mem_strdup(s);
+  return x;
 }
 
-cell *mk_ffun(SchemeY *s, ffun_t *f) {
-  cell *c = obj_alloc(s);
-  set_ffun(c, f);
-  return c;
+Object *ffun(ffun_t *f) {
+  Object *x = mem_malloc(sizeof(Object));
+  type(x) = T_FFUN;
+  as(x).ffun = f;
+  return x;
 }
 
-cell *mk_vector(SchemeY *s, size_t sz) {
-  cell *c = obj_alloc(s);
-  vector *v = mk_vector_t(s, sz);
-  set_vector(c, v);
-  return c;
-}
-
-cell *mk_table(SchemeY *s, size_t sz) {
-  cell *c = obj_alloc(s);
-  vector *v = mk_vector_t(s, sz);
-  set_table(c, v);
-  return c;
-}
-
-cell *mk_port(SchemeY *s, FILE *p) {
-  cell *c = obj_alloc(s);
-  set_port(c, p);
-  return c;
-}
-
-vector *mk_vector_t(SchemeY *s, size_t sz) {
-  size_t vs = cellsize(sizeof(vector));
-  vector *v = heap_calloc(s, sz + vs, sizeof(cell));
+static Vector *vvector(size_t n) {
+  Vector *v = mem_calloc(n + b2o(sizeof(Vector)), sizeof(Object));
   v->len = 0;
-  v->size = sz;
+  v->size = n;
   return v;
+}
+
+Object *vector(size_t n) {
+  Object *x = mem_malloc(sizeof(Object));
+  type(x) = T_VECTOR;
+  as(x).vector = vvector(n);
+  return x;
+}
+
+Object *table(size_t n) {
+  Object *x = mem_malloc(sizeof(Object));
+  type(x) = T_TABLE;
+  as(x).vector = vvector(n);
+  return x;
+}
+
+Object *port(FILE *p) {
+  Object *x = mem_malloc(sizeof(Object));
+  type(x) = T_PORT;
+  as(x).port = p;
+  return x;
 }

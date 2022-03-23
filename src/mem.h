@@ -4,35 +4,42 @@
 ** data structures (strings, vectors, etc.) are stored in contiguous memory,
 ** aligned to the size of a cell. Copying collection is performed, using
 ** Cheney's algorithm.
+**
+** 
 */
 #ifndef _MEM_H
 #define _MEM_H
 
 #include "object.h"
-#include "state.h"
 
 #include <stdlib.h>
 
-#define cellsize(s) ((s + sizeof(cell) - 1) / sizeof(cell))
+#define HEAP_SIZE 32
 
-// #define BLOCK_SIZE 128
+#define b2o(s) ((s + sizeof(Object) - 1) / sizeof(Object))
 
-// typedef struct generation {
-//   cell *from, *to;
-//   cell *next;
-//   size_t semi;  // semi-space size
-// } generation;
+// typedef struct Generation {
+//   Object *roots;
+//   Object *heap;
+//   Object *next;
+//   size_t size;
+//   struct Generation *to;
+// } Generation;
 
-// extern generation *generations;
-// extern generation *g0;
+void mem_init(int n_generations);
+void mem_shutdown();
 
-cell *obj_alloc(SchemeY *s);
+void mem_root(Object **root);
 
-void *heap_malloc(SchemeY *s, size_t size);
-void *heap_calloc(SchemeY *s, size_t n, size_t size);
-// void *heap_realloc(SchemeY *s, void *ptr, size_t size);
+void *mem_malloc(size_t size);
+void *mem_calloc(size_t n, size_t size);
 
-// void gc(SchemeY *s, int generation);
-void gc(SchemeY *s);
+char *mem_strdup(const char *s);
+char *mem_strndup(const char *s, size_t n);
+
+// void gc(int generation);
+void gc();
+
+size_t heap_size();
 
 #endif

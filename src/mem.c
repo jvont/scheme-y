@@ -1,61 +1,101 @@
 #include "mem.h"
-#include "state.h"
+// #include "state.h"
+// #include "io.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
-#define isfrom(s,c) ((c) >= (s)->heap && (c) < (s)->heap + (s)->semi)
+#define isfrom(c) ((c) >= heap && (c) < heap + semi)
 
-// Allocate a single cell.
-cell *obj_alloc(SchemeY *s) {
-  return heap_malloc(s, sizeof(cell));
+/* Heap globals */
+Object *heap, *heap2;
+Object *next;
+size_t semi;
+
+#define ROOTS_SIZE 8
+Object ***roots;
+size_t roots_len, roots_size;
+
+void mem_init(int n_generations) {
+  heap = malloc(2 * HEAP_SIZE * sizeof(Object));
+  if (!heap) exit(1);
+  heap2 = heap + HEAP_SIZE;
+  next = heap;
+  semi = HEAP_SIZE;
+
+  roots = malloc(ROOTS_SIZE * sizeof(Object **));
+  roots_len = 0;
+  roots_size = ROOTS_SIZE;
+}
+
+void mem_shutdown() {
+  free(heap < heap2 ? heap : heap2);
+  free(roots);
+}
+
+void mem_root(Object **root) {
+  if (roots_len == roots_size) {
+    roots = realloc(roots, roots_size * 2);
+    if (!roots) exit(1);
+  }
+  roots[roots_len++] = root;
 }
 
 // Allocate size bytes of cell-aligned memory.
-void *heap_malloc(SchemeY *s, size_t size) {
-  if (!size) return NULL;
-  size_t n = cellsize(size);
-  if (s->next + n >= s->heap + s->semi) {
-    gc(s);
-    if (s->next + n >= s->heap + s->semi) {
+void *mem_malloc(size_t size) {
+  if (size == 0) return NULL;
+  size_t n = b2o(size);
+  if (next + n >= heap + semi) {
+    gc();
+    if (next + n >= heap + semi) {
       // syH_resize(s);
       printf("out of memory!\n");
       exit(1);
     }
   }
-  cell *c = s->next;
-  s->next += n;
-  // printf("  heap: %zu cells\n", s->next - s->heap);
-  return c;
+  Object *p = next;
+  next += n;
+  // printf("  heap: %zu cells\n", next - heap);
+  return p;
 }
 
 // Get an array of n objects of size bytes, setting their bytes to zero.
-void *heap_calloc(SchemeY *s, size_t n, size_t size) {
-  void *p = heap_malloc(s, n * size);
+void *mem_calloc(size_t n, size_t size) {
+  void *p = mem_malloc(n * size);
   return !p ? NULL : memset(p, 0, n * size);
 }
 
+// Duplicate a null-terminated string.
+char *mem_strdup(const char *s) {
+  return mem_strndup(s, strlen(s));
+}
+
+// Duplicate a string of length n (null character excluded).
+char *mem_strndup(const char *s, size_t n) {
+  char *d = mem_malloc(n + 1);
+  return strcpy(d, s);
+}
+
 // Copy object reference to the to-space.
-static void copy_obj(SchemeY *s, cell **p) {
-  cell *c = *p;
-  if (!c) return;
-  else if (isfwd(c)) {  // already copied
-    *p = as(c).fwd;
+static void copy_obj(Object **p) {
+  Object *x = *p;
+  if (!x) return;
+  else if (isfwd(x)) {  // already copied
+    *p = as(x).fwd;
   }
   else {
-    cell *fwd = s->next++;
-    *fwd = *c;
-    if (islist(c)) {  // recursively copy list
-      copy_obj(s, &car(fwd));
-      copy_obj(s, &cdr(fwd));
+    Object *fwd = next++;
+    *fwd = *((Object *)untag(x));
+    if (islist(x)) {  // copy list
+      copy_obj(&car(fwd));
+      copy_obj(&cdr(fwd));
+      fwd = (Object *)tag(fwd);
     }
-    else switch (type(c)) {
+    else switch (type(x)) {  // copy atom
       case T_STRING:
-      case T_SYMBOL: {
-        size_t n = strlen(as(c).string) - sizeof(size_t) + 1;
-        char *dest = heap_malloc(s, n);
-        strcpy(as(fwd).string, as(c).string);
-      }
+      case T_SYMBOL:
+        as(fwd).string = mem_strdup(as(x).string);
         break;
       case T_VECTOR:
       case T_TABLE:
@@ -64,35 +104,29 @@ static void copy_obj(SchemeY *s, cell **p) {
       default:
         break;
     }
-    as(c).fwd = fwd;
-    type(c) = T_FWD;
+    type(x) = T_FWD;
+    as(x).fwd = fwd;
     *p = fwd;
   }
 }
 
-#include "io.h"
-
-void gc(SchemeY *s) {
-  printf("before gc: %zu cells\n", s->next - s->heap);
-
+void gc() {
+  // printf("before gc: %zu cells\n", next - heap);
+  
   /* swap semi-spaces */
-  cell *swap = s->heap;
-  s->heap = s->heap2;
-  s->heap2 = swap;
-  s->next = s->heap;
+  Object *swap = heap;
+  heap = heap2;
+  heap2 = swap;
+  next = heap;
   
   /* forward roots */
-  copy_obj(s, &s->inport);
-  copy_obj(s, &s->outport);
-
-  cell *cur = s->globals->items;
-  cell *end = cur + s->globals->size;
-  for (; cur < end; cur++) {
-    copy_obj(s, &car(cur));
-    copy_obj(s, &cdr(cur));
+  for (size_t i = 0; i < roots_len; i++) {
+    copy_obj(roots[i]);
   }
+  
+  // printf("after gc: %zu cells\n", next - heap);
+}
 
-  copy_obj(s, &s->acc);
-
-  printf("after gc: %zu cells\n", s->next - s->heap);
+size_t heap_size() {
+  return next - heap;
 }

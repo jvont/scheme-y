@@ -1,24 +1,24 @@
 /*
 ** Scheme object representation.
-** Every scheme cell contains either an atom or list. Atoms are tagged
-** unions, while cons cells contain two pointers (car and cdr) to other
-** Scheme objects. An atom's tag shares space with the car pointer of
-** the cons cell, relying on the assumption that memory addresses below
-** 16 are unused.
+** Scheme contains two types of objects: lists and atoms. The LSB of object
+** pointers is tagged to indicate whether or not it is a list. Lists contain
+** two pointers (car and cdr) to other Scheme objects, while atoms are tagged
+** unions containing a variety of different types.
 */
 #ifndef _OBJECT_H
 #define _OBJECT_H
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct SchemeY_ SchemeY;
-typedef union cell_ cell;
-typedef struct vector_ vector;
+typedef struct State State;
+typedef union Object Object;
+typedef struct Vector Vector;
 
-typedef cell *(ffun_t)(SchemeY *, cell *);
+typedef Object *(ffun_t)(State *, Object *);
 
-// typedef struct port_ {
+// typedef struct Port {
 //   enum {
 //     P_FREE = 0,
 //     P_FILE = 1,
@@ -26,7 +26,7 @@ typedef cell *(ffun_t)(SchemeY *, cell *);
 //     P_READ = 4,
 //     P_WRITE = 8,
 //     P_EOF = 16,
-//   } type;
+//   } _type;
 //   union {
 //     struct {
 //       FILE *stream;
@@ -37,98 +37,83 @@ typedef cell *(ffun_t)(SchemeY *, cell *);
 //       char *ptr;
 //       char *end;
 //     } buffer;
-//   } as;
-// } port;
+//   } _as;
+// } Port;
 
-enum {
-  T_INT = 1,
-  T_REAL,
-  T_CHAR,
-  T_STRING,
-  T_SYMBOL,
-  T_FFUN,
-  T_VECTOR,
-  T_TABLE,
-  T_PORT,
-  T_FWD,  /* forwarding pointer */
+typedef struct List {
+  Object *_car;
+  Object *_cdr;
+} List;
+
+typedef struct Atom {
+  enum {
+    T_INTEGER, T_REAL, // T_RATIONAL, T_COMPLEX,
+    T_CHARACTER,
+    T_STRING, T_SYMBOL,
+    T_FFUN, // T_PRIMITIVE, T_SYNTAX,
+    T_VECTOR, T_TABLE,
+    T_PORT,
+    T_FWD
+  } type;
+  union {
+    int32_t integer;
+    float real;
+    uint32_t character;
+    char *string;
+    ffun_t *ffun;
+    Vector *vector;
+    FILE *port;
+    Object *fwd;
+  } as;
+} Atom;
+
+union Object {
+  List list;
+  Atom atom;
 };
 
-union cell_ {
-  struct {
-    cell *car;
-    cell *cdr;
-  } list;
-  struct {
-    size_t type;  /* car-aligned */
-    union {
-      long integer;
-      float real;
-      int character;
-      char string[1];  /* store in cdr space */
-      ffun_t *ffun;
-      vector *vector;
-      FILE *port;
-      cell *fwd;
-    } as;
-  } atom;
+/* Header for a dynamic array */
+struct Vector {
+  size_t len, size;  /* should be same size as Cell */
+  Object items[];  /* variable-sized array (C99) */
 };
 
-struct vector_ {
-  size_t len, size;
-  cell items[];  /* variable-sized array (C99) */
-};
+#define tag(x)   ((size_t)x | 0x1)
+#define untag(x) ((size_t)x & ~0x1)
 
-// #define get(c) (!(c) || (c)->atom.type != T_FWD ? (c) : (c)->atom.as.fwd)
+#define islist(x) (((size_t)x & 0x1) == 0x1)
+#define isatom(x) (((size_t)x & 0x1) == 0x0)
 
-#define car(c) ((c)->list.car)
-#define cdr(c) ((c)->list.cdr)
+#define car(x) (((List *)untag(x))->_car)
+#define cdr(x) (((List *)untag(x))->_cdr)
 
-#define type(c) ((c)->atom.type)
-#define as(c)   ((c)->atom.as)
+#define type(x) (((Atom *)(x))->type)
+#define as(x)   (((Atom *)(x))->as)
 
-#define islist(c)   (c && type(c) > 255)
-#define isatom(c)   (!c || (T_INT <= type(c) && type(c) <= T_PORT))
+#define isinteger(x)   (isatom(x) && type(x) == T_INTEGER)
+#define isreal(x)      (isatom(x) && type(x) == T_REAL)
+#define isnumber(x)    (isatom(x) && (isinteger(x) || isreal(x)))
+#define ischaracter(x) (isatom(x) && type(x) == T_CHARACTER)
+#define isstring(x)    (isatom(x) && type(x) == T_STRING)
+#define issymbol(x)    (isatom(x) && type(x) == T_SYMBOL)
+#define isffun(x)      (isatom(x) && type(x) == T_FFUN)
+#define isvector(x)    (isatom(x) && type(x) == T_VECTOR)
+#define istable(x)     (isatom(x) && type(x) == T_TABLE)
+#define isport(x)      (isatom(x) && type(x) == T_PORT)
+#define isfwd(x)       (isatom(x) && type(x) == T_FWD)
 
-#define isint(c)    (type(c) == T_INT)
-#define isreal(c)   (type(c) == T_REAL)
-#define isnumber(c) (isint(c) || isreal(c))
-#define ischar(c)   (type(c) == T_CHAR)
-#define isstring(c) (type(c) == T_STRING)
-#define issymbol(c) (type(c) == T_SYMBOL)
-#define isffun(c)   (type(c) == T_FFUN)
-#define isvector(c) (type(c) == T_VECTOR)
-#define istable(c)  (type(c) == T_TABLE)
-#define isport(c)   (type(c) == T_PORT)
-#define isfwd(c)    (type(c) == T_FWD)
+#define set_int(x,i)    (type(x) = T_INTEGER, as(x).integer = i)
+#define set_real(x,r)   (type(x) = T_REAL, as(x).real = r)
 
-#define set_cons(c,a,d) (car(c) = a, cdr(c) = d)
-#define set_int(c,i)    (type(c) = T_INT, as(c).integer = i)
-#define set_real(c,r)   (type(c) = T_REAL, as(c).real = r)
-#define set_char(c,ch)  (type(c) = T_CHAR, as(c).character = ch)
-#define set_string(c,s) (type(c) = T_STRING, as(c).string = s)
-#define set_symbol(c,s) (type(c) = T_SYMBOL, as(c).string = s)
-#define set_ffun(c,f)   (type(c) = T_FFUN, as(c).ffun = f)
-#define set_vector(c,v) (type(c) = T_VECTOR, as(c).vector = v)
-#define set_table(c,v)  (type(c) = T_TABLE, as(c).vector = v)
-#define set_port(c,p)   (type(c) = T_PORT, as(c).port = p)
-// cell *set_fwd(cell *c, cell *f);
-
-cell *cons(SchemeY *s, cell *a, cell *d);
-cell *mk_int(SchemeY *s, long i);
-cell *mk_real(SchemeY *s, float r);
-cell *mk_char(SchemeY *s, int ch);
-cell *mk_string(SchemeY *s, char *str);
-cell *mk_symbol(SchemeY *s, char *sym);
-cell *mk_ffun(SchemeY *s, ffun_t *f);
-cell *mk_vector(SchemeY *s, size_t sz);
-cell *mk_table(SchemeY *s, size_t sz);
-cell *mk_port(SchemeY *s, FILE *p);
-
-vector *mk_vector_t(SchemeY *s, size_t sz);
-
-
-/* Hash table methods */
-
-
+Object *cons(Object *a, Object *d);
+Object *integer(long i);
+Object *real(float r);
+Object *character(int c);
+Object *string(const char *s);
+Object *symbol(const char *s);
+Object *ffun(ffun_t *f);
+Object *vector(size_t n);
+Object *table(size_t n);
+Object *port(FILE *p);
 
 #endif
