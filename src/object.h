@@ -1,9 +1,16 @@
 /*
 ** Scheme object representation.
+**
 ** Scheme contains two types of objects: lists and atoms. The LSB of object
 ** pointers is tagged to indicate whether or not it is a list. Lists contain
 ** two pointers (car and cdr) to other Scheme objects, while atoms are tagged
 ** unions containing a variety of different types.
+**
+** Both vectors and tables use the same dynamic array object under the hood.
+**
+** Syntax functions (ex. quote, lambda) accept a lexical environment as a
+** second argument. The arguments list passed to syntax functions is also
+** passed unevaluated.
 */
 #ifndef _OBJECT_H
 #define _OBJECT_H
@@ -16,7 +23,8 @@ typedef struct State State;
 typedef union Object Object;
 typedef struct Vector Vector;
 
-typedef Object *(ffun_t)(State *, Object *);
+typedef Object *(Procedure)(Object *);
+typedef Object *(Syntax)(Object *, Object *);
 
 // typedef struct Port {
 //   enum {
@@ -47,10 +55,10 @@ typedef struct List {
 
 typedef struct Atom {
   enum {
-    T_INTEGER, T_REAL, // T_RATIONAL, T_COMPLEX,
+    T_INTEGER, T_REAL, /* T_RATIONAL, T_COMPLEX, */
     T_CHARACTER,
     T_STRING, T_SYMBOL,
-    T_FFUN, // T_PRIMITIVE, T_SYNTAX,
+    T_PROCEDURE, T_SYNTAX,
     T_VECTOR, T_TABLE,
     T_PORT,
     T_FWD
@@ -60,7 +68,8 @@ typedef struct Atom {
     float real;
     uint32_t character;
     char *string;
-    ffun_t *ffun;
+    Procedure *procedure;
+    Syntax *syntax;
     Vector *vector;
     FILE *port;
     Object *fwd;
@@ -72,22 +81,23 @@ union Object {
   Atom atom;
 };
 
-/* Header for a dynamic array */
 struct Vector {
-  size_t len, size;  /* should be same size as Cell */
+  size_t len, size;
   Object items[];  /* variable-sized array (C99) */
 };
 
-#define tag(x)   ((size_t)x | 0x1)
-#define untag(x) ((size_t)x & ~0x1)
+#define cast_p2i(p) ((uintptr_t)((void *)(p)))
 
-#define islist(x) (((size_t)x & 0x1) == 0x1)
-#define isatom(x) (((size_t)x & 0x1) == 0x0)
+#define tag(x)   (cast_p2i(x) | 0x1)
+#define untag(x) (cast_p2i(x) & ~0x1)
+
+#define islist(x) ((cast_p2i(x) & 0x1) == 0x1)
+#define isatom(x) ((cast_p2i(x) & 0x1) == 0x0)
 
 #define car(x) (((List *)untag(x))->_car)
 #define cdr(x) (((List *)untag(x))->_cdr)
 
-#define type(x) (((Atom *)(x))->type)
+#define type(x) (((Atom *)(x))->type)  /* unsafe cast */
 #define as(x)   (((Atom *)(x))->as)
 
 #define isinteger(x)   (isatom(x) && type(x) == T_INTEGER)
@@ -96,7 +106,8 @@ struct Vector {
 #define ischaracter(x) (isatom(x) && type(x) == T_CHARACTER)
 #define isstring(x)    (isatom(x) && type(x) == T_STRING)
 #define issymbol(x)    (isatom(x) && type(x) == T_SYMBOL)
-#define isffun(x)      (isatom(x) && type(x) == T_FFUN)
+#define isprocedure(x) (isatom(x) && type(x) == T_PROCEDURE)
+#define issyntax(x)    (isatom(x) && type(x) == T_SYNTAX)
 #define isvector(x)    (isatom(x) && type(x) == T_VECTOR)
 #define istable(x)     (isatom(x) && type(x) == T_TABLE)
 #define isport(x)      (isatom(x) && type(x) == T_PORT)
@@ -111,7 +122,8 @@ Object *mk_real(float r);
 Object *mk_character(int c);
 Object *mk_string(const char *s);
 Object *mk_symbol(const char *s);
-Object *mk_ffun(ffun_t *f);
+Object *mk_procedure(Procedure *p);
+Object *mk_syntax(Syntax *s);
 Object *mk_vector(size_t n);
 Object *mk_table(size_t n);
 Object *mk_port(FILE *p);

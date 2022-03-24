@@ -2,12 +2,11 @@
 ** Simple tests to make sure some of our more tricky macros are
 ** functioning correctly.
 */
-
 #include "testlib.h"
 #include "../src/object.h"
 
-int test_list_atom_sizes() {
-  return sizeof(List) == sizeof(Atom) ? TEST_PASS : TEST_FAIL;
+int test_object_size() {
+  return sizeof(Object) == 2 * sizeof(void *) ? TEST_PASS : TEST_FAIL;
 }
 
 int test_islist() {
@@ -56,7 +55,7 @@ int test_as() {
 }
 
 Test table[] = {
-  { test_list_atom_sizes, "Object size (Atom == List)" },
+  { test_object_size, "object size = 2 * pointer size" },
   { test_islist, "islist() for untagged object" },
   { test_islist_tag, "islist() for tagged object" },
   { test_car_cdr, "car field access for tagged object" },

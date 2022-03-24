@@ -19,7 +19,7 @@ static int issubseq(int c) { return isalnum(c) || strchr("!$%&*/:<=>?@^_~+-.", c
 #define skip_while(s,pred) while (pred(s->lookahead)) next(s)
 #define save_next(s) (save(s, s->lookahead), next(s))
 
-// Get user input, printing prompt to stdout.
+/* Get user input, printing prompt to stdout. */
 static void input_prompt(State *s) {
   if (s->depth) {  // print prompt based on nesting
     for (size_t i = 0; i <= s->depth; i++)
@@ -33,7 +33,7 @@ static void input_prompt(State *s) {
     input_prompt(s);
 }
 
-// Get the next character from file/interactive prompt.
+/* Get the next character from file/interactive prompt. */
 static void next(State *s) {
   if (s->prompt) {  // prompt
     if (s->lookahead == '\n')
@@ -51,7 +51,7 @@ static void next(State *s) {
 
 // }
 
-// Save character to token buffer, resize buffer if needed.
+/* Save character to token buffer, resize buffer if needed. */
 static void save(State *s, int c) {
   if (s->tp >= s->tend) {  // resize
     if (s->tend - s->token >= SIZE_MAX / 2) {
@@ -72,37 +72,37 @@ static void save(State *s, int c) {
   // *s->tp = '\0';
 }
 
-// Scan an invalid token until next delimiter.
+/* Scan an invalid token until next delimiter. */
 static Cell *parse_invalid(State *s) {
   s->err = E_TOKEN;
   save_until(s, isdelim);
   return NULL;
 }
 
-// Number = integer | real ;
+/* Number = integer | real ; */
 static Cell *parse_number(State *s) {
   save_until(s, isdelim);
-  errno = 0;  // reset errno before call
+  errno = 0;  /* reset errno before call */
   char *nptr = s->token;
   char *endptr;
   long i = strtol(nptr, &endptr, 0);
   if (errno == ERANGE || *endptr != '\0') {
     float r = strtof(nptr, &endptr);
     if (errno == ERANGE || *endptr != '\0')
-      return parse_invalid(s);  // ERROR: number too large
+      return parse_invalid(s);  /* ERROR: number too large */
     else
       return real(r);
   }
   return integer(i);
 }
 
-// String = " { ( character | escape ) - " } " ;
+/* String = " { ( character | escape ) - " } " ; */
 static Cell *parse_string(State *s) {
   next(s);
   while (s->lookahead != '"') {
-    if (s->lookahead == '\\')  // string escape
+    if (s->lookahead == '\\')  /* string escape */
       save_next(s);
-    else if (s->lookahead == EOF) {  // unexpected EOF
+    else if (s->lookahead == EOF) {  /* unexpected EOF */
       s->err = E_EOF;
       break;
     }
@@ -113,7 +113,7 @@ static Cell *parse_string(State *s) {
   return string(s->token);
 }
 
-// Identifier = initial { subseq } ;
+/* Identifier = initial { subseq } ; */
 static Cell *parse_identifier(State *s) {
   while (issubseq(s->lookahead)) {
     save(s, tolower(s->lookahead));
@@ -145,9 +145,9 @@ static void append(State *s, Cell *obj) {
 
 static Cell *parse_expr(State *s);
 
-// Parse a list expression.
+/* Parse a list expression. */
 static Cell *parse_list(State *s) {
-  skip_while(s, isspace);  // skip whitespace
+  skip_while(s, isspace);  /* skip whitespace */
   if (s->lookahead == ')') {
     s->depth--;
     next(s);
@@ -164,39 +164,39 @@ static Cell *parse_list(State *s) {
   return dotsep ? obj : cons(obj, rest);
 }
 
-// Parse an expression.
+/* Parse an expression. */
 static Cell *parse_expr(State *s) {
   s->tp = s->token;
-  skip_while(s, isspace);  // skip whitespace
-  if (s->lookahead == '(') {  // list (common)
+  skip_while(s, isspace);  /* skip whitespace */
+  if (s->lookahead == '(') {  /* list (common) */
     s->depth++;
     next(s);
     // TODO: handle illegal dot separator at start of list
     return parse_list(s);
   }
-  else if (isinitial(s->lookahead))  // identifier
+  else if (isinitial(s->lookahead))  /* identifier */
     return parse_identifier(s);
-  else if (isdigit(s->lookahead))  // number
+  else if (isdigit(s->lookahead))  /* number */
     return parse_number(s);
   else switch (s->lookahead) {
     case '+': case '-':
       save_next(s);
-      if (s->lookahead == '.' || isdigit(s->lookahead))  // ( + | - ) [ . ] { digit }
+      if (s->lookahead == '.' || isdigit(s->lookahead))  /* ( + | - ) [ . ] { digit } */
         return parse_number(s);
-      else if (isdelim(s->lookahead))  // ( + | - )
+      else if (isdelim(s->lookahead))  /* ( + | - ) */
         return parse_identifier(s);
       break;
     case '.':
       save_next(s);
-      if (isdelim(s->lookahead))  // dot separator (if list)
+      if (isdelim(s->lookahead))  /* dot separator (if list) */
         return (s->depth) ? parse_expr(s) : parse_invalid(s);
-      else if (isinitial(s->lookahead) || s->lookahead == '.')  // .. { subseq }
+      else if (isinitial(s->lookahead) || s->lookahead == '.')  /* .. { subseq } */
         return parse_identifier(s);
-      else if (isdigit(s->lookahead))  // . { digit }
+      else if (isdigit(s->lookahead))  /* . { digit } */
         return parse_number(s);
       break;
     case '"':
-      return parse_string(s);  // " { char | esc } "
+      return parse_string(s);  /* " { char | esc } " */
     case '\'':
       next(s);
       return cons(sy_intern(s, "quote"), cons(parse_expr(s), NULL));
@@ -219,12 +219,12 @@ static Cell *parse_expr(State *s) {
         case 'f':
           next(s);
           return sy_intern(s, "#f");
-        case '|':  // block comment #| ... |#
-        case '\\':  // character literal (handle special cases)
-        case '(':  // vector literal
+        case '|':  /* block comment #| ... |# */
+        case '\\':  /* character literal (handle special cases) */
+        case '(':  /* vector literal */
         case 'e': case 'i': case 'o': case 'd': case 'x':  // number literal
-        case 'u':  // bytevector constant, #u8(
-        default:  // datum label, #<digits>= #<digits>#
+        case 'u':  /* bytevector constant, #u8( */
+        default:  /* datum label, #<digits>= #<digits># */
           break;
       }
       break;
@@ -251,7 +251,7 @@ static void read_error(State *s) {
 
 // set_input_port - update lineno, lookahead, etc.
 
-// Read the next expression.
+/* Read the next expression. */
 Cell *sy_read(State *s, Cell *port) {
   s->tp = s->token;
   s->lookahead = s->prompt ? '\n' : EOF;
@@ -355,13 +355,13 @@ static void write_obj(Cell *obj, FILE *stream) {
   }
 }
 
-// Print an object to stdout.
+/* Print an object to stdout. */
 void print_obj(Cell *obj) {
   write_obj(obj, stdout);
   fputc('\n', stdout);
 }
 
-// Write an object to given/default output port.
+/* Write an object to given/default output port. */
 Cell *sy_write(State *s, Cell *args) {
   Cell *port = cdr(args) ? car(cdr(args)) : s->outport;
   FILE *stream = as(port).port;

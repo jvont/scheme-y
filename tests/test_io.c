@@ -1,3 +1,6 @@
+/*
+** Testing input/output functions, which handle the parsing of Scheme code.
+*/
 #include "testlib.h"
 // #include "../src/io.h"
 

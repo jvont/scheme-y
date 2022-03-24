@@ -1,11 +1,13 @@
 /*
 ** Testing object allocation and garbage collection.
 */
-
 #include "testlib.h"
 #include "../src/mem.h"
 
+#include <stdlib.h>
 #include <string.h>
+
+static size_t heap_size() { return next - heap; }
 
 int test_malloc() {
   mem_init(2);
@@ -29,7 +31,7 @@ int test_gc_free() {
   type(x) = T_INTEGER;
   as(x).integer = 1;
 
-  gc();
+  garbage_collect();
   size_t sz = heap_size();
   mem_shutdown();
   return (sz == 0) ? TEST_PASS : TEST_FAIL;
@@ -42,7 +44,7 @@ int test_gc_root() {
   as(x).integer = 1;
 
   mem_root(&x);
-  gc();
+  garbage_collect();
   size_t sz = heap_size();
   mem_shutdown();
   return (sz == 1) ? TEST_PASS : TEST_FAIL;
@@ -61,7 +63,7 @@ int test_gc_list() {
   x = (Object *)tag(x);
 
   mem_root(&x);
-  gc();
+  garbage_collect();
   size_t sz = heap_size();
   mem_shutdown();
   return (sz == 2) ? TEST_PASS : TEST_FAIL;

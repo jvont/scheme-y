@@ -45,15 +45,22 @@ Object *mk_symbol(const char *s) {
   return x;
 }
 
-Object *mk_ffun(ffun_t *f) {
+Object *mk_procedure(Procedure *p) {
   Object *x = mem_malloc(sizeof(Object));
-  type(x) = T_FFUN;
-  as(x).ffun = f;
+  type(x) = T_PROCEDURE;
+  as(x).procedure = p;
+  return x;
+}
+
+Object *mk_syntax(Syntax *s) {
+  Object *x = mem_malloc(sizeof(Object));
+  type(x) = T_SYNTAX;
+  as(x).syntax = s;
   return x;
 }
 
 static Vector *vvector(size_t n) {
-  Vector *v = mem_calloc(n + b2o(sizeof(Vector)), sizeof(Object));
+  Vector *v = mem_calloc(n + objsize(sizeof(Vector)), sizeof(Object));
   v->len = 0;
   v->size = n;
   return v;

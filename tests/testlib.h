@@ -1,3 +1,7 @@
+/*
+** Test utility functions. Tests are given as a static array of Test
+** objects, where each test function returns either TEST_PASS or TEST_FAIL.
+*/
 #ifndef TEST_UTIL_H
 #define TEST_UTIL_H
 
@@ -10,20 +14,18 @@ typedef struct Test {
   char *name;
 } Test;
 
-#define _T2S(r) ((r) == TEST_PASS ? "PASSED" : "FAILED")
-
-#define run_tests(table,label) {                          \
-  int result = TEST_PASS;                                 \
-  printf("%s:\n", label);                                 \
-  size_t n_tests = sizeof(table) / sizeof(*table);        \
-  for (size_t i = 0; i < n_tests; i++) {                  \
-    Test t = table[i];                                    \
-    printf("  [%zu/%zu] %s... ", i + 1, n_tests, t.name); \
-    int r = t.func();                                     \
-    if (result == TEST_PASS) { result = r; }              \
-    printf("%s\n", _T2S(r));                              \
-  }                                                       \
-  printf("test result: %s\n\n", _T2S(result));            \
+#define run_tests(table,label) {                    \
+  printf("%s:\n", label);                           \
+  size_t n = sizeof(table) / sizeof(*table);        \
+  for (size_t i = 0; i < n; i++) {                  \
+    Test t = table[i];                              \
+    printf("  [%zu/%zu] %s... ", i + 1, n, t.name); \
+    fflush(stdout);                                 \
+    int r = t.func();                               \
+    printf("%s\n", (r) == TEST_PASS                 \
+      ? "\x1b[32mPASSED\x1b[0m"                     \
+      : "\x1b[31mFAILED\x1b[0m");                   \
+  }                                                 \
 }
 
 #endif

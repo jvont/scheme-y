@@ -10,7 +10,8 @@
 #include <string.h>
 
 int main(int argc, char **argv) {
-
+  // uintptr_t
+  // size_t
 
   // State ss;
   // State *s = &ss;
@@ -30,7 +31,7 @@ int main(int argc, char **argv) {
   //     print_obj(s->acc);
 
   //     s->acc = sy_eval(s, s->acc);
-  //     // gc(s);
+  //     // garbage_collect(s);
 
   //     printf("=> ");
   //     print_obj(s->acc);

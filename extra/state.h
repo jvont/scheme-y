@@ -24,32 +24,32 @@ enum {
 
 struct State {
   /* global variables */
-  Vector *globals;  // top-level environment
-  Cell *inport;  // default input port
-  Cell *outport;  // default output port
+  Vector *globals;  /* top-level environment */
+  Cell *inport;  /* default input port */
+  Cell *outport;  /* default output port */
 
   /* registers */
-  Cell *env;  // environment stack
-  Cell *eval;  // current code
-  Cell *args;  // closure arguments
-  Cell *acc;  // accumulator
+  Cell *env;  /* environment stack */
+  Cell *eval;  /* current code */
+  Cell *args;  /* closure arguments */
+  Cell *acc;  /* accumulator */
 
   Cell *stack_head;
   Cell *stack_tail;
 
   /* managed heap */
-  Cell *heap, *heap2;  // semi-spaces
-  Cell *next;  // next free space
-  size_t semi;  // semi-space size
+  Cell *heap, *heap2;  /* semi-spaces */
+  Cell *next;  /* next free space */
+  size_t semi;  /* semi-space size */
 
   /* reader state */
-  char *token, *tp, *tend;  // token buffer
-  int lookahead;  // lookahead character
-  size_t depth, lineno;  // reader state
-  int prompt;  // interactive prompt mode?
+  char *token, *tp, *tend;  /* token buffer */
+  int lookahead;  /* lookahead character */
+  size_t depth, lineno;  /* reader state */
+  int prompt;  /* interactive prompt mode? */
   
   /* error handling */
-  int err;  // error status
+  int err;  /* error status */
 };
 
 void sy_init(State *s);

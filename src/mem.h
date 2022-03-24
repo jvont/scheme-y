@@ -16,7 +16,8 @@
 
 #define HEAP_SIZE 32
 
-#define b2o(s) ((s + sizeof(Object) - 1) / sizeof(Object))
+/* convert size in bytes to objects, rounded up */
+#define objsize(n) ((n + sizeof(Object) - 1) / sizeof(Object))
 
 // typedef struct Generation {
 //   Object *roots;
@@ -25,6 +26,15 @@
 //   size_t size;
 //   struct Generation *to;
 // } Generation;
+
+/* managed heap global variables */
+extern Object *heap, *heap2;
+extern Object *next;
+extern size_t semi;
+
+#define ROOTS_SIZE 8
+extern Object ***roots;
+extern size_t roots_len, roots_size;
 
 void mem_init(int n_generations);
 void mem_shutdown();
@@ -37,9 +47,7 @@ void *mem_calloc(size_t n, size_t size);
 char *mem_strdup(const char *s);
 char *mem_strndup(const char *s, size_t n);
 
-// void gc(int generation);
-void gc();
-
-size_t heap_size();
+// void garbage_collect(int generation);
+void garbage_collect(int level);
 
 #endif

@@ -8,15 +8,14 @@
 
 #define isfrom(c) ((c) >= heap && (c) < heap + semi)
 
-/* Heap globals */
 Object *heap, *heap2;
 Object *next;
 size_t semi;
 
-#define ROOTS_SIZE 8
 Object ***roots;
 size_t roots_len, roots_size;
 
+/* Initialize managed heap for n_generations. */
 void mem_init(int n_generations) {
   heap = malloc(2 * HEAP_SIZE * sizeof(Object));
   if (!heap) exit(1);
@@ -29,11 +28,13 @@ void mem_init(int n_generations) {
   roots_size = ROOTS_SIZE;
 }
 
+/* Free heap + saved roots. */
 void mem_shutdown() {
   free(heap < heap2 ? heap : heap2);
   free(roots);
 }
 
+/* Add a new root to the heap. */
 void mem_root(Object **root) {
   if (roots_len == roots_size) {
     roots = realloc(roots, roots_size * 2);
@@ -42,12 +43,12 @@ void mem_root(Object **root) {
   roots[roots_len++] = root;
 }
 
-// Allocate size bytes of cell-aligned memory.
+/* Allocate size bytes of cell-aligned memory. */
 void *mem_malloc(size_t size) {
   if (size == 0) return NULL;
-  size_t n = b2o(size);
+  size_t n = objsize(size);
   if (next + n >= heap + semi) {
-    gc();
+    garbage_collect(0);
     if (next + n >= heap + semi) {
       // syH_resize(s);
       printf("out of memory!\n");
@@ -60,24 +61,24 @@ void *mem_malloc(size_t size) {
   return p;
 }
 
-// Get an array of n objects of size bytes, setting their bytes to zero.
+/* Get an array of n objects of size bytes, setting their bytes to zero. */
 void *mem_calloc(size_t n, size_t size) {
   void *p = mem_malloc(n * size);
   return !p ? NULL : memset(p, 0, n * size);
 }
 
-// Duplicate a null-terminated string.
+/* Duplicate a null-terminated string. */
 char *mem_strdup(const char *s) {
   return mem_strndup(s, strlen(s));
 }
 
-// Duplicate a string of length n (null character excluded).
+/* Duplicate a string of length n (null character excluded). */
 char *mem_strndup(const char *s, size_t n) {
   char *d = mem_malloc(n + 1);
   return strcpy(d, s);
 }
 
-// Copy object reference to the to-space.
+/* Copy object reference to the to-space. */
 static void copy_obj(Object **p) {
   Object *x = *p;
   if (!x) return;
@@ -110,7 +111,8 @@ static void copy_obj(Object **p) {
   }
 }
 
-void gc() {
+/* Collect garbage for the specified generation and its children. */
+void garbage_collect(int level) {
   // printf("before gc: %zu cells\n", next - heap);
   
   /* swap semi-spaces */
@@ -125,8 +127,4 @@ void gc() {
   }
   
   // printf("after gc: %zu cells\n", next - heap);
-}
-
-size_t heap_size() {
-  return next - heap;
 }

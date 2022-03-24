@@ -8,7 +8,7 @@
 
 void sy_init(State *s) {
   /* global variables (internal structure, never referenced) */
-  size_t vs = b2o(sizeof(Vector));
+  size_t vs = objsize(sizeof(Vector));
   s->globals = calloc(vs + GLOBAL_ENV_SIZE, sizeof(Cell));
   if (!s->globals) exit(1);  
   s->globals->len = 0;
@@ -34,17 +34,17 @@ void sy_shutdown(State *s) {
   // free(s->outport);
 }
 
-// djb2 hash: http://www.cse.yorku.ca/~oz/hash.html
+/* djb2 hash: http://www.cse.yorku.ca/~oz/hash.html */
 static unsigned int hash(const char *s) {
   unsigned int h = 5381;
   while (*s) {
-    // h = h * 33 ^ c
+    /* h = h * 33 ^ c */
     h = ((h << 5) + h) ^ *s++;
   }
   return h;
 }
 
-// Lookup a given variable by address and return its entry, or NULL if not found.
+/* Lookup a given variable by address and return its entry, or NULL if not found. */
 static Cell *sy_lookup_entry(State *s, Cell *var) {
   Vector *v = s->globals;
   unsigned int size = v->size;
@@ -57,7 +57,7 @@ static Cell *sy_lookup_entry(State *s, Cell *var) {
   return NULL;
 }
 
-// Lookup a given variable by address and return its value, or NULL if not found.
+/* Lookup a given variable by address and return its value, or NULL if not found. */
 // FUTURE: convert to hash-table-eq/get
 Cell *sy_lookup(State *s, Cell *var) {
   Cell *e = sy_lookup_entry(s, var);
@@ -72,7 +72,7 @@ Cell *sy_bind(State *s, Cell *var, Cell *val) {
   return NULL;
 }
 
-// Find/store a symbol, returning its associated entry.
+/* Find/store a symbol, returning its associated entry. */
 Cell *sy_intern_entry(State *s, char *sym) {
   Vector *v = s->globals;
   unsigned int size = v->size;
@@ -86,7 +86,7 @@ Cell *sy_intern_entry(State *s, char *sym) {
   return ev + i;
 }
 
-// Find/store a symbol and return it.
+/* Find/store a symbol and return it. */
 Cell *sy_intern(State *s, char *sym) {
   return car(sy_intern_entry(s, sym));
 }
@@ -98,7 +98,7 @@ Cell *sy_intern_bind(State *s, char *sym, Cell *val) {
 }
 
 Cell *map(State *s, Cell *args) {
-  // check arity
+  // TODO: check arity
   Cell *fn = car(args);
   for (args = cdr(args); cdr(args); args = cdr(args)) {
 
@@ -121,10 +121,10 @@ Cell *eval_list(State *s, Cell *args) {
   return cons(first, rest);
 }
 
-// Evaluate an expression.
+/* Evaluate an expression. */
 Cell *sy_eval(State *s, Cell *expr) {
-  if (!expr) return NULL;  // empty
-  else if (islist(expr)) {  // list
+  if (!expr) return NULL;  /* empty */
+  else if (islist(expr)) {  /* list */
 
 
   // else return expr;
@@ -132,7 +132,7 @@ Cell *sy_eval(State *s, Cell *expr) {
     Cell *p = sy_eval(s, car(expr));
     if (!p)
       return NULL;
-    else if (isffun(p)) {  // foreign-func
+    else if (isprocedure(p)) {  /* procedure */
       Cell *args = eval_list(s, cdr(expr));
       return as(p).ffun(s, args);
     }
