@@ -3,15 +3,17 @@
 #include "object.h"
 // #include "state.h"
 
-#include <assert.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+
+
 int main(int argc, char **argv) {
-  // uintptr_t
-  // size_t
+
+  mem_init(2);
+
+
 
   // State ss;
   // State *s = &ss;

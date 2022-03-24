@@ -22,14 +22,14 @@
 // typedef struct Generation {
 //   Object *roots;
 //   Object *heap;
-//   Object *next;
+//   Object *heap_next;
 //   size_t size;
 //   struct Generation *to;
 // } Generation;
 
 /* managed heap global variables */
 extern Object *heap, *heap2;
-extern Object *next;
+extern Object *heap_next;
 extern size_t semi;
 
 #define ROOTS_SIZE 8
@@ -39,7 +39,8 @@ extern size_t roots_len, roots_size;
 void mem_init(int n_generations);
 void mem_shutdown();
 
-void mem_root(Object **root);
+void root_push(Object **root);
+void root_pop();
 
 void *mem_malloc(size_t size);
 void *mem_calloc(size_t n, size_t size);

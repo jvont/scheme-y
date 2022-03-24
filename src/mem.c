@@ -1,15 +1,12 @@
 #include "mem.h"
-// #include "state.h"
-// #include "io.h"
 
-#include <assert.h>
-#include <stdio.h>
+// #include <stdio.h>
 #include <string.h>
 
 #define isfrom(c) ((c) >= heap && (c) < heap + semi)
 
 Object *heap, *heap2;
-Object *next;
+Object *heap_next;
 size_t semi;
 
 Object ***roots;
@@ -20,7 +17,7 @@ void mem_init(int n_generations) {
   heap = malloc(2 * HEAP_SIZE * sizeof(Object));
   if (!heap) exit(1);
   heap2 = heap + HEAP_SIZE;
-  next = heap;
+  heap_next = heap;
   semi = HEAP_SIZE;
 
   roots = malloc(ROOTS_SIZE * sizeof(Object **));
@@ -34,8 +31,8 @@ void mem_shutdown() {
   free(roots);
 }
 
-/* Add a new root to the heap. */
-void mem_root(Object **root) {
+/* Push a new root to the heap. */
+void root_push(Object **root) {
   if (roots_len == roots_size) {
     roots = realloc(roots, roots_size * 2);
     if (!roots) exit(1);
@@ -43,21 +40,26 @@ void mem_root(Object **root) {
   roots[roots_len++] = root;
 }
 
+/* Pop the last root from the heap. */
+void root_pop(Object **root) {
+  roots_len--;
+}
+
 /* Allocate size bytes of cell-aligned memory. */
 void *mem_malloc(size_t size) {
   if (size == 0) return NULL;
   size_t n = objsize(size);
-  if (next + n >= heap + semi) {
+  if (heap_next + n >= heap + semi) {
     garbage_collect(0);
-    if (next + n >= heap + semi) {
+    if (heap_next + n >= heap + semi) {
       // syH_resize(s);
       printf("out of memory!\n");
       exit(1);
     }
   }
-  Object *p = next;
-  next += n;
-  // printf("  heap: %zu cells\n", next - heap);
+  Object *p = heap_next;
+  heap_next += n;
+  // printf("  heap: %zu cells\n", heap_next - heap);
   return p;
 }
 
@@ -86,7 +88,7 @@ static void copy_obj(Object **p) {
     *p = as(x).fwd;
   }
   else {
-    Object *fwd = next++;
+    Object *fwd = heap_next++;
     *fwd = *((Object *)untag(x));
     if (islist(x)) {  // copy list
       copy_obj(&car(fwd));
@@ -113,18 +115,18 @@ static void copy_obj(Object **p) {
 
 /* Collect garbage for the specified generation and its children. */
 void garbage_collect(int level) {
-  // printf("before gc: %zu cells\n", next - heap);
+  // printf("before gc: %zu cells\n", heap_next - heap);
   
   /* swap semi-spaces */
   Object *swap = heap;
   heap = heap2;
   heap2 = swap;
-  next = heap;
+  heap_next = heap;
   
   /* forward roots */
   for (size_t i = 0; i < roots_len; i++) {
     copy_obj(roots[i]);
   }
   
-  // printf("after gc: %zu cells\n", next - heap);
+  // printf("after gc: %zu cells\n", heap_next - heap);
 }

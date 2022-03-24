@@ -19,7 +19,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct State State;
 typedef union Object Object;
 typedef struct Vector Vector;
 

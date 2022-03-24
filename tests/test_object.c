@@ -67,6 +67,5 @@ Test table[] = {
 
 int main() {
   run_tests(table, "test object.h macros")
-
   return 0;
 }
