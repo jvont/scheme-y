@@ -73,7 +73,7 @@ static void next(Parser *p) {
 /* Save character to token buffer, resize buffer if needed. */
 static void save(Parser *p, int c) {
   if (p->tp >= p->tend) {  // resize
-    if (p->tend - p->token >= SIZE_MAX / 2) {
+    if ((uintptr_t)(p->tend - p->token) >= SIZE_MAX / 2) {
       fprintf(stderr, "maximum buffer size reached\n");
       exit(1);
     }

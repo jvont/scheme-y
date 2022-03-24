@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static size_t heap_size() { return next - heap; }
+static size_t heap_size() { return heap_next - heap; }
 
 int test_malloc() {
   mem_init(2);
@@ -43,7 +43,7 @@ int test_gc_root() {
   type(x) = T_INTEGER;
   as(x).integer = 1;
 
-  root_push(&x);
+  mem_push(&x);
   garbage_collect(0);
   size_t sz = heap_size();
   mem_shutdown();
@@ -56,8 +56,8 @@ int test_root_pop() {
   type(x) = T_INTEGER;
   as(x).integer = 1;
 
-  root_push(&x);
-  root_pop();
+  mem_push(&x);
+  mem_pop();
   garbage_collect(0);
   size_t sz = heap_size();
   mem_shutdown();
@@ -76,7 +76,7 @@ int test_gc_list() {
   cdr(x) = NULL;
   x = (Object *)tag(x);
 
-  root_push(&x);
+  mem_push(&x);
   garbage_collect(0);
   size_t sz = heap_size();
   mem_shutdown();

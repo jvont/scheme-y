@@ -11,11 +11,10 @@ Thread *thread_new(size_t stack_size) {
   
 }
 
-void state_free(Thread *t) {
+void thread_free(Thread *t) {
   free(t);
 
 }
-
 
 // void sy_init(State *s) {
 //   /* global variables (internal structure, never referenced) */

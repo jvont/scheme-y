@@ -32,7 +32,7 @@ void mem_shutdown() {
 }
 
 /* Push a new root to the heap. */
-void root_push(Object **root) {
+void mem_push(Object **root) {
   if (roots_len == roots_size) {
     roots = realloc(roots, roots_size * 2);
     if (!roots) exit(1);
@@ -41,7 +41,7 @@ void root_push(Object **root) {
 }
 
 /* Pop the last root from the heap. */
-void root_pop(Object **root) {
+void mem_pop(Object **root) {
   roots_len--;
 }
 

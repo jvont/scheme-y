@@ -39,8 +39,8 @@ extern size_t roots_len, roots_size;
 void mem_init(int n_generations);
 void mem_shutdown();
 
-void root_push(Object **root);
-void root_pop();
+void mem_push(Object **root);
+void mem_pop();
 
 void *mem_malloc(size_t size);
 void *mem_calloc(size_t n, size_t size);
