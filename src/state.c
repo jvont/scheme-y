@@ -6,13 +6,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-State *state_new(size_t stack_size) {
-  State *s = malloc(sizeof(State));
+Thread *thread_new(size_t stack_size) {
+  Thread *t = malloc(sizeof(Thread));
   
 }
 
-void state_free(State *s) {
-  free(s);
+void state_free(Thread *t) {
+  free(t);
 
 }
 
