@@ -7,7 +7,7 @@ OBJS := $(SRCS:%.c=%.o)
 TESTS := $(wildcard tests/*.c)
 
 .PHONY: rebuild all tests clean
-.PRECIOUS: %.o
+# .PRECIOUS: %.o
 
 # rebuild: clean all
 rebuild: clean bin/scheme-y

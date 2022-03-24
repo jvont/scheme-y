@@ -3,31 +3,71 @@
 ** functioning correctly.
 */
 
+#include "testlib.h"
 #include "../src/object.h"
 
-#include <assert.h>
-#include <stdio.h>
+int test_list_atom_sizes() {
+  return sizeof(List) == sizeof(Atom) ? TEST_PASS : TEST_FAIL;
+}
 
-int main() {
-  if (sizeof(List) != sizeof(Atom))
-    fprintf(stderr, "Warning: List size != Atom size.\n");
+int test_islist() {
+  Object x;
+  return islist(&x) ? TEST_FAIL : TEST_PASS;
+}
 
-  Object x, _car, _cdr;
-  x.list._car = &_car;
-  x.list._cdr = &_cdr;
+int test_islist_tag() {
+  Object x;
   Object *xref = (Object *)tag(&x);
+  return islist(xref) ? TEST_PASS : TEST_FAIL;
+}
 
-  assert(islist(xref));
-  assert(car(xref) == &_car);
-  assert(cdr(xref) == &_cdr);
+int test_car_cdr() {
+  Object x, _car;
+  x.list._car = &_car;
+  Object *xref = (Object *)tag(&x);
+  return car(xref) == &_car ? TEST_PASS : TEST_FAIL;
+}
 
+int test_isatom() {
+  Object x;
   x.atom.type = T_INTEGER;
   x.atom.as.integer = 5;
-  xref = (Object *)untag(xref);
+  return isatom(&x) ? TEST_PASS : TEST_FAIL;
+}
 
-  assert(isatom(xref));
-  assert(type(xref) == T_INTEGER);
-  assert(as(xref).integer == 5);
+int test_isatom_tag() {
+  Object x;
+  Object *xref = (Object *)tag(&x);
+  return isatom(xref) ? TEST_FAIL : TEST_PASS;
+}
+
+int test_type() {
+  Object x;
+  x.atom.type = T_INTEGER;
+  x.atom.as.integer = 5;
+  return type(&x) == T_INTEGER ? TEST_PASS : TEST_FAIL;
+}
+
+int test_as() {
+  Object x;
+  x.atom.type = T_INTEGER;
+  x.atom.as.integer = 5;
+  return as(&x).integer == 5 ? TEST_PASS : TEST_FAIL;
+}
+
+Test table[] = {
+  { test_list_atom_sizes, "Object size (Atom == List)" },
+  { test_islist, "islist() for untagged object" },
+  { test_islist_tag, "islist() for tagged object" },
+  { test_car_cdr, "car field access for tagged object" },
+  { test_isatom, "isatom() for untagged object" },
+  { test_isatom_tag, "isatom() for tagged object" },
+  { test_type, "type field access" },
+  { test_as, "as field access" }
+};
+
+int main() {
+  run_tests(table, "test object.h macros")
 
   return 0;
 }

@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
   // State *s = &ss;
   // sy_init(s);
 
-  // sy_intern_bind(s, "+", ffun(s, sy_add));
+  // sy_intern_bind(s, "+", mk_ffun(s, sy_add));
   // sy_intern_bind(s, "x", mk_int(s, 42));
 
   // if (argc == 1) {  // start REPL

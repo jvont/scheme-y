@@ -105,15 +105,15 @@ struct Vector {
 #define set_int(x,i)    (type(x) = T_INTEGER, as(x).integer = i)
 #define set_real(x,r)   (type(x) = T_REAL, as(x).real = r)
 
-Object *cons(Object *a, Object *d);
-Object *integer(long i);
-Object *real(float r);
-Object *character(int c);
-Object *string(const char *s);
-Object *symbol(const char *s);
-Object *ffun(ffun_t *f);
-Object *vector(size_t n);
-Object *table(size_t n);
-Object *port(FILE *p);
+Object *mk_cons(Object *a, Object *d);
+Object *mk_integer(long i);
+Object *mk_real(float r);
+Object *mk_character(int c);
+Object *mk_string(const char *s);
+Object *mk_symbol(const char *s);
+Object *mk_ffun(ffun_t *f);
+Object *mk_vector(size_t n);
+Object *mk_table(size_t n);
+Object *mk_port(FILE *p);
 
 #endif

@@ -3,49 +3,49 @@
 
 #include <string.h>
 
-Object *cons(Object *_car, Object *_cdr) {
+Object *mk_cons(Object *_car, Object *_cdr) {
   Object *x = mem_malloc(sizeof(Object));
   car(x) = _car;
   cdr(x) = _cdr;
   return (Object *)tag(x);
 }
 
-Object *integer(long i) {
+Object *mk_integer(long i) {
   Object *x = mem_malloc(sizeof(Object));
   type(x) = T_INTEGER;
   as(x).integer = i;
   return x;
 }
 
-Object *real(float r) {
+Object *mk_real(float r) {
   Object *x = mem_malloc(sizeof(Object));
   type(x) = T_REAL;
   as(x).real = r;
   return x;
 }
 
-Object *character(int c) {
+Object *mk_character(int c) {
   Object *x = mem_malloc(sizeof(Object));
   type(x) = T_CHARACTER;
   as(x).character = c;
   return x;
 }
 
-Object *string(const char *s) {
+Object *mk_string(const char *s) {
   Object *x = mem_malloc(sizeof(Object));
   type(x) = T_STRING;
   as(x).string = mem_strdup(s);
   return x;
 }
 
-Object *symbol(const char *s) {
+Object *mk_symbol(const char *s) {
   Object *x = mem_malloc(sizeof(Object));
   type(x) = T_SYMBOL;
   as(x).string = mem_strdup(s);
   return x;
 }
 
-Object *ffun(ffun_t *f) {
+Object *mk_ffun(ffun_t *f) {
   Object *x = mem_malloc(sizeof(Object));
   type(x) = T_FFUN;
   as(x).ffun = f;
@@ -59,21 +59,21 @@ static Vector *vvector(size_t n) {
   return v;
 }
 
-Object *vector(size_t n) {
+Object *mk_vector(size_t n) {
   Object *x = mem_malloc(sizeof(Object));
   type(x) = T_VECTOR;
   as(x).vector = vvector(n);
   return x;
 }
 
-Object *table(size_t n) {
+Object *mk_table(size_t n) {
   Object *x = mem_malloc(sizeof(Object));
   type(x) = T_TABLE;
   as(x).vector = vvector(n);
   return x;
 }
 
-Object *port(FILE *p) {
+Object *mk_port(FILE *p) {
   Object *x = mem_malloc(sizeof(Object));
   type(x) = T_PORT;
   as(x).port = p;
