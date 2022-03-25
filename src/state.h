@@ -54,8 +54,8 @@ struct State {
 // void state_init(State *s);
 // void state_shutdown(State *s);
 
-Thread *thread_new();
-void thread_free(Thread *s);
+Thread *thread_new(State *s);
+void thread_free(Thread *t);
 
 Object *lookup(Object *env);
 Object *bind(Object *env, Object *var, Object *val);

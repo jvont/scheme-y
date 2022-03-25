@@ -81,8 +81,8 @@ union Object {
 };
 
 struct Vector {
+  Object *items;
   size_t len, size;
-  Object items[];  /* variable-sized array (C99) */
 };
 
 #define cast_p2i(p) ((uintptr_t)((void *)(p)))
@@ -91,12 +91,11 @@ struct Vector {
 #define untag(x) (cast_p2i(x) & ~0x1)
 
 #define islist(x) ((cast_p2i(x) & 0x1) == 0x1)
-#define isatom(x) ((cast_p2i(x) & 0x1) == 0x0)
-
 #define car(x) (((List *)untag(x))->_car)
 #define cdr(x) (((List *)untag(x))->_cdr)
 
-#define type(x) (((Atom *)(x))->type)  /* unsafe cast */
+#define isatom(x) ((cast_p2i(x) & 0x1) == 0x0)
+#define type(x) (((Atom *)(x))->type)
 #define as(x)   (((Atom *)(x))->as)
 
 #define isinteger(x)   (isatom(x) && type(x) == T_INTEGER)

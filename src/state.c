@@ -6,9 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-Thread *thread_new(size_t stack_size) {
+Thread *thread_new(State *s) {
   Thread *t = malloc(sizeof(Thread));
   
+  t->parent = s;
 }
 
 void thread_free(Thread *t) {

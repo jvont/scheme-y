@@ -1,5 +1,6 @@
 /*
 ** Memory manager (heap).
+**
 ** Memory is allocated at the next available pointer on the heap. All special
 ** data structures (strings, vectors, etc.) are stored in contiguous memory,
 ** aligned to the size of a cell. Copying collection is performed, using
@@ -15,28 +16,33 @@
 #include <stdlib.h>
 
 #define HEAP_SIZE 32
+#define ROOTS_SIZE 8
+// #define GENERATION_SIZE 32
 
-/* convert size in bytes to objects, rounded up */
+/* Converts size in bytes to size in objects, rounded up. */
 #define objsize(n) ((n + sizeof(Object) - 1) / sizeof(Object))
 
-// typedef struct Generation {
-//   Object *roots;
-//   Object *heap;
-//   Object *heap_next;
-//   size_t size;
-//   struct Generation *to;
-// } Generation;
+typedef struct Generation {
+  /* Memory blocks. */
+  Object *blocks, *alloc;
+  size_t blocks_size;
+  /* Roots for this generation. */
+  Object ***roots;
+  size_t roots_len, roots_size;
+  /* Next younger generation. */
+  struct Generation *to;
+} Generation;
 
-/* managed heap global variables */
-extern Object *heap, *heap2;
-extern Object *heap_next;
-extern size_t semi;
+typedef struct Heap {
+  /* Generations array (oldest to youngest). */
+  Generation *generations;
+  Generation *g0;
+  size_t n_generations;
+} Heap;
 
-#define ROOTS_SIZE 8
-extern Object ***roots;
-extern size_t roots_len, roots_size;
+extern Object *heap, *heap_next;
 
-void mem_init(int n_generations);
+void mem_init(int n);
 void mem_shutdown();
 
 void mem_push(Object **root);
@@ -48,7 +54,6 @@ void *mem_calloc(size_t n, size_t size);
 char *mem_strdup(const char *s);
 char *mem_strndup(const char *s, size_t n);
 
-// void garbage_collect(int generation);
-void garbage_collect(int level);
+void garbage_collect(int n);
 
 #endif

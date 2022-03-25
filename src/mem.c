@@ -5,24 +5,32 @@
 
 #define isfrom(c) ((c) >= heap && (c) < heap + semi)
 
-Object *heap, *heap2;
-Object *heap_next;
-size_t semi;
+// Generation *gn = NULL;
+// Generation *g0 = NULL;
+// size_t n_gen = 0;
 
-Object ***roots;
-size_t roots_len, roots_size;
+Object *heap = NULL;
+Object *heap2 = NULL;
+Object *heap_next = NULL;
+size_t semi = 0;
 
-/* Initialize managed heap for n_generations. */
-void mem_init(int n_generations) {
-  heap = malloc(2 * HEAP_SIZE * sizeof(Object));
-  if (!heap) exit(1);
-  heap2 = heap + HEAP_SIZE;
-  heap_next = heap;
-  semi = HEAP_SIZE;
+Object ***roots = NULL;
+size_t roots_len = 0;
+size_t roots_size = 0;
 
-  roots = malloc(ROOTS_SIZE * sizeof(Object **));
-  roots_len = 0;
-  roots_size = ROOTS_SIZE;
+/* Initialize a managed heap with n generations. */
+void mem_init(int n) {
+  if (!heap && !roots) {
+    heap = malloc(2 * HEAP_SIZE * sizeof(Object));
+    if (!heap) exit(1);
+    heap2 = heap + HEAP_SIZE;
+    heap_next = heap;
+    semi = HEAP_SIZE;
+
+    roots = malloc(ROOTS_SIZE * sizeof(Object **));
+    roots_len = 0;
+    roots_size = ROOTS_SIZE;
+  }
 }
 
 /* Free heap + saved roots. */
@@ -84,18 +92,18 @@ char *mem_strndup(const char *s, size_t n) {
 static void copy_obj(Object **p) {
   Object *x = *p;
   if (!x) return;
-  else if (isfwd(x)) {  // already copied
+  else if (isfwd(x)) {  /* Already copied */
     *p = as(x).fwd;
   }
   else {
     Object *fwd = heap_next++;
     *fwd = *((Object *)untag(x));
-    if (islist(x)) {  // copy list
+    if (islist(x)) {  /* Copy list */
       copy_obj(&car(fwd));
       copy_obj(&cdr(fwd));
       fwd = (Object *)tag(fwd);
     }
-    else switch (type(x)) {  // copy atom
+    else switch (type(x)) {  /* Copy atom */
       case T_STRING:
       case T_SYMBOL:
         as(fwd).string = mem_strdup(as(x).string);
@@ -113,20 +121,18 @@ static void copy_obj(Object **p) {
   }
 }
 
-/* Collect garbage for the specified generation and its children. */
-void garbage_collect(int level) {
+/* Collect garbage for generation n and its children. */
+void garbage_collect(int n) {
   // printf("before gc: %zu cells\n", heap_next - heap);
-  
-  /* swap semi-spaces */
+
   Object *swap = heap;
   heap = heap2;
   heap2 = swap;
   heap_next = heap;
-  
-  /* forward roots */
+
   for (size_t i = 0; i < roots_len; i++) {
     copy_obj(roots[i]);
   }
-  
+
   // printf("after gc: %zu cells\n", heap_next - heap);
 }
