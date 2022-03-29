@@ -22,28 +22,22 @@
 
 typedef struct Heap Heap;
 
-typedef struct Chunk {
-  Object *blocks;
+typedef struct Generation {
+  Object *blocks, *alloc;
   size_t size;
-  struct Chunk *prev;
-} Chunk;
+  struct Generation *to;
+} Generation;
 
 struct Heap {
+  Generation *g0, *gn;
+
   Object *from, *to;  // semi-spaces
   Object *next;  // next free block
   size_t size;  // semi-space size
 
-  // Chunk *from;  // linked list of chunks
-
-  State *s;  // asoociated state
 };
 
-// procedure:
-// from- and to-spaces are chunks
-// allocate chunks when needed
-// on collection, resize to-space if needed
-
-Heap *Heap_new();
+Heap *Heap_new(size_t n_generations, size_t heap_size);
 void Heap_free(Heap *h);
 
 void *Heap_malloc(Heap *h, size_t size);

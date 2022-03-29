@@ -6,7 +6,7 @@
 #define isfrom(c) ((c) >= heap && (c) < heap + semi)
 
 /* Create a managed heap, with an associated state. */
-Heap *Heap_new() {
+Heap *Heap_new(size_t n_generations, size_t heap_size) {
   Heap *h = malloc(sizeof(Heap));
   h->from = malloc(2 * HEAP_SIZE * sizeof(Object));
   h->to = h->from + HEAP_SIZE;
