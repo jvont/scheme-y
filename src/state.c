@@ -1,19 +1,17 @@
 #include "state.h"
-#include "mem.h"
 
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-Thread *thread_new(State *s) {
-  Thread *t = malloc(sizeof(Thread));
+State *State_new() {
+  State *s = malloc(sizeof(State));
   
-  t->parent = s;
 }
 
-void thread_free(Thread *t) {
-  free(t);
+void State_free(State *s) {
+  free(s);
 
 }
 

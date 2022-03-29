@@ -12,12 +12,14 @@
 ** second argument. The arguments list passed to syntax functions is also
 ** passed unevaluated.
 */
-#ifndef _OBJECT_H
-#define _OBJECT_H
+#ifndef OBJECT_H
+#define OBJECT_H
 
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <stddef.h>
+
+typedef struct State State;
 
 typedef union Object Object;
 typedef struct Vector Vector;
@@ -114,16 +116,16 @@ struct Vector {
 #define set_int(x,i)    (type(x) = T_INTEGER, as(x).integer = i)
 #define set_real(x,r)   (type(x) = T_REAL, as(x).real = r)
 
-Object *mk_cons(Object *a, Object *d);
-Object *mk_integer(long i);
-Object *mk_real(float r);
-Object *mk_character(int c);
-Object *mk_string(const char *s);
-Object *mk_symbol(const char *s);
-Object *mk_procedure(Procedure *p);
-Object *mk_syntax(Syntax *s);
-Object *mk_vector(size_t n);
-Object *mk_table(size_t n);
-Object *mk_port(FILE *p);
+// Object *mk_cons(Object *, Object *d);
+// Object *mk_integer(long i);
+// Object *mk_real(float r);
+// Object *mk_character(int c);
+// Object *mk_string(const char *s);
+// Object *mk_symbol(const char *s);
+// Object *mk_procedure(Procedure *p);
+// Object *mk_syntax(Syntax *s);
+// Object *mk_vector(size_t n);
+// Object *mk_table(size_t n);
+// Object *mk_port(FILE *p);
 
 #endif

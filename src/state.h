@@ -12,54 +12,33 @@
 ** environment (env_tail) is implemented as a hash table and shared between
 ** threads.
 */
-#ifndef _STATE_H
-#define _STATE_H
+#ifndef STATE_H
+#define STATE_H
 
 #include "object.h"
+#include "heap.h"
 
-#include <stdlib.h>
+#include <stddef.h>
 
 #define GLOBAL_ENV_SIZE 128
 
 #define DEFAULT_INPUT_PORT stdin
 #define DEFAULT_OUTPUT_PORT stdout
 
-typedef struct State State;
-
-typedef struct Thread {
-  Object *queue_head;
-  Object *queue_tail;
-
-  Object *stack;
-  Object *stack_top;
-  size_t stack_size;
-
-  Object *env_head;  /* Current environment rib */
-  Object *env_tail;  /* Top-level table */
-
-  int status;  /* Thread status */
-  int err;  /* Error status */
-
-  State *parent;  /* Parent state */
-} Thread;
-
 struct State {
-  Thread *threads;
-  size_t threads_len;
-  size_t threads_size;
+  Object *stack, *top;
 
-  Thread *current_thread;
+  
+
+  int err;  // error status
+  Heap *h;
 };
 
-// void state_init(State *s);
-// void state_shutdown(State *s);
+State *State_new();
+void State_free(State *s);
 
-Thread *thread_new(State *s);
-void thread_free(Thread *t);
-
-Object *lookup(Object *env);
-Object *bind(Object *env, Object *var, Object *val);
-
-Object *intern(Object *env, const char *s);
+// Object *lookup(Object *env);
+// Object *bind(Object *env, Object *var, Object *val);
+// Object *intern(Object *env, const char *s);
 
 #endif

@@ -1,8 +1,8 @@
 /*
 **
 */
-#ifndef _VM_H
-#define _VM_H
+#ifndef VM_H
+#define VM_H
 
 #include "object.h"
 
@@ -27,6 +27,6 @@ typedef struct Instruction {
 
 // state stores VM info (instructions, ip/pc, stack, heap, etc.)
 
-void run(struct State *s);
+void State_run(struct State *s);
 
 #endif

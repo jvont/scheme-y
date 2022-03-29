@@ -1,19 +1,18 @@
 // #include "io.h"
-#include "mem.h"
+#include "heap.h"
 #include "object.h"
-// #include "state.h"
+#include "state.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-
-
 int main(int argc, char **argv) {
 
-  mem_init(2);
+  State *s = State_new();
+  
 
-
+  State_free(s);
 
   // State ss;
   // State *s = &ss;

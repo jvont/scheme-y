@@ -1,5 +1,5 @@
 #include "io.h"
-#include "mem.h"
+#include "heap.h"
 #include "state.h"
 
 #include <ctype.h>
@@ -32,8 +32,6 @@ typedef struct Parser {
   int lookahead;  /* Lookahead character */
   size_t depth, lineno;  /* Reader state */
   int prompt;  /* Interactive prompt mode? */
-
-  State *s;
 
   int error;
 } Parser;

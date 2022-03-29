@@ -2,7 +2,7 @@
 ** Testing object allocation and garbage collection.
 */
 #include "testlib.h"
-#include "../src/mem.h"
+#include "../src/heap.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -83,16 +83,28 @@ int test_gc_list() {
   return sz == 2 ? TEST_PASS : TEST_FAIL;
 }
 
+int test_gc_cyclic() {
+  mem_init(2);
+  Object *x = mem_malloc(sizeof(Object));
+  Object *y = mem_malloc(sizeof(Object));
+  car(x) = NULL; cdr(x) = y;
+  car(y) = NULL; cdr(y) = x;
+  size_t sz = heap_size();
+  mem_shutdown();
+  return sz == 2 ? TEST_PASS : TEST_FAIL;
+}
+
 Test table[] = {
   { test_malloc, "mem_malloc" },
   { test_calloc, "mem_calloc" },
   { test_gc_free, "collect unrooted" },
   { test_gc_root, "collect root" },
   { test_root_pop, "pop root" },
-  { test_gc_list, "collect list root" }
+  { test_gc_list, "collect list root" },
+  { test_gc_cyclic, "collect cyclic list" }
 };
 
 int main() {
-  run_tests(table, "test mem.h functions");
+  run_tests(table, "test heap.h functions");
   return 0;
 }

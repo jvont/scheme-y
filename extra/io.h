@@ -3,8 +3,8 @@
 ** Methods for reading from/writing to streams. Interactive prompt is handled
 ** internally by sy_read and related functions.
 */
-#ifndef _IO_H
-#define _IO_H
+#ifndef IO_H
+#define IO_H
 
 #include "object.h"
 
@@ -13,10 +13,10 @@
 // size_t depth, lineno;  /* Reader state */
 // int prompt;  /* Interactive prompt mode? */
 
-void print_obj(Object *obj);
+void print_obj(Object *);
 
-// Object *sy_read_char(Object *port);
-Object *sy_read(Object *port);
-Object *sy_write(Object *args);
+// Object *sy_read_char(Object *);
+Object *sy_read(Object *);
+Object *sy_write(Object *);
 
 #endif
