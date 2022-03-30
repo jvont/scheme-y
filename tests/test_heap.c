@@ -3,6 +3,7 @@
 */
 #include "testlib.h"
 #include "../src/heap.h"
+#include "../src/runtime.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -21,7 +22,6 @@ static size_t Gen_blocks(Generation *g) {
 }
 
 int test_malloc() {
-  Heap *h = Heap_new();
   Object *x = Heap_malloc(h, sizeof(Object));
   size_t sz = Gen_blocks(h->g0);
   Heap_clear(h);
@@ -109,7 +109,8 @@ Test table[] = {
 };
 
 int main() {
-  h = Heap_new();
+  SyState s;  // TODO: use actual state for GC
+  h = Heap_new(&s);
   run_tests(table, "test heap.h functions");
   Heap_free(h);
   return 0;
