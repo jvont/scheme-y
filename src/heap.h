@@ -2,15 +2,20 @@
 ** Managed heap.
 **
 ** The heap uses a generational garbage collector to manage memory. New
-** objects are (typically) allocated in the yougest generation (g0). Memory
-** is allocated at the next available pointer (alloc) of the given generation.
+** objects are usually allocated in the yougest generation (g0). Memory
+** is allocated at the next available space (alloc) of the given generation.
 ** All special data structures (strings, vectors, etc.) are stored in
 ** contiguous memory, aligned to the size of a cell.
 **
+** Roots used for garbage collection are stored in an associated state (s).
+** Garbage collection is performed for a specified generation and below.
+** Each generation N is collected after log2(N-1) collections have occurred.
+**
 ** On collection of a specific generation, objects from younger generations
-** are copied to the next generation. The oldest generation (gn) is made up of
-** two generations, which are used as swap spaces. Copying collection is
-** performed using Cheney's algorithm.
+** are copied to the next generation, while older generations are ignored.
+** The oldest generation (gn) is made up of two generations, which are used
+** as swap spaces for collection. Copying collection is performed using
+** Cheney's algorithm.
 */
 #ifndef HEAP_H
 #define HEAP_H
@@ -37,6 +42,7 @@ typedef struct Heap {
   Generation g0[N_GENERATIONS + 1];
   Generation *gn;  // current tenured swap space
   SyState *s;  // associated state (roots)
+  unsigned int current, count;  // current collected generation
 } Heap;
 
 Heap *Heap_new(SyState *s);
@@ -53,6 +59,6 @@ void *Heap_calloc(Heap *h, size_t n, size_t size);
 char *Heap_strdup(Heap *h, const char *s);
 char *Heap_strndup(Heap *h, const char *s, size_t n);
 
-void Heap_collect(Heap *h, int gen);
+void Heap_collect(Heap *h);
 
 #endif

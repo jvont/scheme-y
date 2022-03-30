@@ -90,8 +90,7 @@ static void copy_obj(Heap *h, Object **p) {
   // }
 }
 
-// Collect garbage for generation gen and below for a given state.
-void Heap_collect(Heap *h, int gen) {
+void Heap_collect(Heap *h) {
   // printf("before gc: %zu cells\n", heap_next - heap);
 
   SyState *s = h->s;

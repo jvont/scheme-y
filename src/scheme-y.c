@@ -32,8 +32,8 @@ int main(int argc, char **argv) {
 
   List *root = (List *)untag(s->stack);
 
-  Heap_collect(h, 0);  // move to old space
-  Heap_collect(h, 0);
+  Heap_collect(h);  // move to old space
+  Heap_collect(h);
 
   Sy_close(s);
 
