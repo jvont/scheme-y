@@ -1,67 +1,41 @@
-// #include "io.h"
+#include "scheme-y.h"
+#include "runtime.h"
 #include "heap.h"
-#include "object.h"
-#include "state.h"
+#include "utils.h"
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+
+SyState *Sy_open() {
+  SyState *s = SyState_new();
+  s->h = Heap_new(s);
+  return s;
+}
+
+void Sy_close(SyState *s) {
+  Heap_free(s->h);
+  SyState_free(s);
+}
 
 int main(int argc, char **argv) {
 
-  State *s = State_new();
-  
+  SyState *s = Sy_open();
+  Heap *h = s->h;
 
-  State_free(s);
+  Object *x = Heap_malloc(h, sizeof(Object));
+  type(x) = T_INTEGER;
+  as(x).integer = 5;
 
-  // State ss;
-  // State *s = &ss;
-  // sy_init(s);
+  s->stack = err_malloc(sizeof(Object));
+  car(s->stack) = x;
+  cdr(s->stack) = NULL;
+  s->stack = (Object *)tag(s->stack);
 
-  // sy_intern_bind(s, "+", mk_ffun(s, sy_add));
-  // sy_intern_bind(s, "x", mk_int(s, 42));
+  List *root = (List *)untag(s->stack);
 
-  // if (argc == 1) {  // start REPL
-  //   s->prompt = 1;
-  //   for (;;) {
-  //     s->err = E_OK;
+  Heap_collect(h, 0);  // move to old space
+  Heap_collect(h, 0);
 
-  //     printf("memory: %zu of %zu\n", s->next - s->heap, s->semi);
-  //     s->acc = sy_read(s, NULL);
-  //     printf("read: ");
-  //     print_obj(s->acc);
+  Sy_close(s);
 
-  //     s->acc = sy_eval(s, s->acc);
-  //     // garbage_collect(s);
-
-  //     printf("=> ");
-  //     print_obj(s->acc);
-  //   }
-  // }
-  // else if (argc == 2) {  // open file (TODO: multiple files)
-  //   FILE *fp = fopen(argv[1], "r");
-  //   if (!fp) {
-  //     perror("Cannot open file");
-  //     return 1;
-  //   }
-  //   State s;
-  //   Cell port = {
-  //     .kind = TyPort,
-  //     .marked = true,
-  //     .as.port = {.stream = fp, .mode = "r"}
-  //   };
-  //   Cell *expr = syR_parse(&s, &port);
-  //   // Cell *res = eval(expr, e);
-  //   if (expr) {
-  //     printf("=> ");
-  //     write_obj(expr);
-  //     fputc('\n', stdout);
-  //   }
-  //   fclose(fp);
-  // }
-  // else {
-  //   printf("Unknown number of arguments.\n");
-  //   return 1;
-  // }
   return 0;
 }

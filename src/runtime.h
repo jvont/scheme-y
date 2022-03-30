@@ -16,26 +16,49 @@
 #define STATE_H
 
 #include "object.h"
-#include "heap.h"
 
 #include <stddef.h>
 
-#define GLOBAL_ENV_SIZE 128
+#define GLOBAL_ENV_SIZE 128  // global execution frame size
 
 #define DEFAULT_INPUT_PORT stdin
 #define DEFAULT_OUTPUT_PORT stdout
 
-struct State {
+// VM Opcodes
+typedef enum OpCode {
+  OP_CONST,
+  OP_LOAD,
+  OP_STORE,
+  OP_DEF,
+  OF_FUN,
+  OP_POP,
+  OP_JUMP,
+  OP_RETURN,
+  OP_CALL
+} OpCode;
+
+// opcode, arity, behaviour
+typedef struct Instruction {
+  OpCode code;
+  // Object *arg;
+} Instruction;
+
+// state stores VM info (instructions, ip/pc, stack, heap, etc.)
+
+struct SyState {
   Object *stack, *top;
 
   
 
   int err;  // error status
-  Heap *h;
+  struct Heap *h;
 };
 
-State *State_new();
-void State_free(State *s);
+SyState *SyState_new();
+void SyState_free(SyState *s);
+
+
+// void SyState_run(SyState *s);
 
 // Object *lookup(Object *env);
 // Object *bind(Object *env, Object *var, Object *val);

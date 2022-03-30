@@ -15,17 +15,13 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
+#include "scheme-y.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stddef.h>
 
-typedef struct State State;
-
-typedef union Object Object;
 typedef struct Vector Vector;
-
-typedef Object *(Procedure)(Object *);
-typedef Object *(Syntax)(Object *, Object *);
 
 // typedef struct Port {
 //   enum {
@@ -77,6 +73,8 @@ typedef struct Atom {
   } as;
 } Atom;
 
+// C99 - section 6.7.2.1, paragraph 14: A pointer to a union object, suitably
+// converted, points to each of its members [...], and vice versa.
 union Object {
   List list;
   Atom atom;
@@ -99,33 +97,5 @@ struct Vector {
 #define isatom(x) ((cast_p2i(x) & 0x1) == 0x0)
 #define type(x) (((Atom *)(x))->type)
 #define as(x)   (((Atom *)(x))->as)
-
-#define isinteger(x)   (isatom(x) && type(x) == T_INTEGER)
-#define isreal(x)      (isatom(x) && type(x) == T_REAL)
-#define isnumber(x)    (isatom(x) && (isinteger(x) || isreal(x)))
-#define ischaracter(x) (isatom(x) && type(x) == T_CHARACTER)
-#define isstring(x)    (isatom(x) && type(x) == T_STRING)
-#define issymbol(x)    (isatom(x) && type(x) == T_SYMBOL)
-#define isprocedure(x) (isatom(x) && type(x) == T_PROCEDURE)
-#define issyntax(x)    (isatom(x) && type(x) == T_SYNTAX)
-#define isvector(x)    (isatom(x) && type(x) == T_VECTOR)
-#define istable(x)     (isatom(x) && type(x) == T_TABLE)
-#define isport(x)      (isatom(x) && type(x) == T_PORT)
-#define isfwd(x)       (isatom(x) && type(x) == T_FWD)
-
-#define set_int(x,i)    (type(x) = T_INTEGER, as(x).integer = i)
-#define set_real(x,r)   (type(x) = T_REAL, as(x).real = r)
-
-// Object *mk_cons(Object *, Object *d);
-// Object *mk_integer(long i);
-// Object *mk_real(float r);
-// Object *mk_character(int c);
-// Object *mk_string(const char *s);
-// Object *mk_symbol(const char *s);
-// Object *mk_procedure(Procedure *p);
-// Object *mk_syntax(Syntax *s);
-// Object *mk_vector(size_t n);
-// Object *mk_table(size_t n);
-// Object *mk_port(FILE *p);
 
 #endif
