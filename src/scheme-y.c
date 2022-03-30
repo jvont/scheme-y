@@ -16,23 +16,31 @@ void Sy_close(SyState *s) {
   SyState_free(s);
 }
 
+static void Sy_pushint(SyState *s, int32_t i) {
+  if (s->top < 10) {
+    Object *x = Heap_malloc(s->h, sizeof(Object));
+    type(x) = T_INTEGER;
+    as(x).integer = i;
+    s->stack[s->top++] = x;
+  }
+}
+
 int main(int argc, char **argv) {
 
   SyState *s = Sy_open();
   Heap *h = s->h;
 
-  Object *x = Heap_malloc(h, sizeof(Object));
-  type(x) = T_INTEGER;
-  as(x).integer = 5;
+  s->top = 0;
+  Sy_pushint(s, 1);
+  Sy_pushint(s, 2);
+  Sy_pushint(s, 3);
+  Sy_pushint(s, 4);
+  Sy_pushint(s, 5);
 
-  s->stack = err_malloc(sizeof(Object));
-  car(s->stack) = x;
-  cdr(s->stack) = NULL;
-  s->stack = (Object *)tag(s->stack);
-
-  List *root = (List *)untag(s->stack);
-
-  Heap_collect(h);  // move to old space
+  Heap_collect(h);
+  Heap_collect(h);
+  Heap_collect(h);
+  Heap_collect(h);
   Heap_collect(h);
 
   Sy_close(s);

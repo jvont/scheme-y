@@ -57,8 +57,7 @@ typedef struct Atom {
     T_STRING, T_SYMBOL,
     T_PROCEDURE, T_SYNTAX,
     T_VECTOR, T_TABLE,
-    T_PORT,
-    T_FWD
+    T_PORT
   } type;
   union {
     int32_t integer;
@@ -69,7 +68,6 @@ typedef struct Atom {
     Syntax *syntax;
     Vector *vector;
     FILE *port;
-    Object *fwd;
   } as;
 } Atom;
 

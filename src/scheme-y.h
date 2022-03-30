@@ -1,5 +1,5 @@
 /*
-** Scheme-Y API and entry point.
+** Scheme-Y API and REPL entry point.
 */
 #ifndef SCHEME_Y_H
 #define SCHEME_Y_H
@@ -18,6 +18,8 @@ typedef Object *(Syntax)(Object *, Object *);
 
 SyState *Sy_open();
 void Sy_close(SyState *s);
+
+// void Sy_pushint(5);
 
 // void Sy_load();
 

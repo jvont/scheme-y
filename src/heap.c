@@ -2,28 +2,54 @@
 #include "runtime.h"
 #include "utils.h"
 
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define isfrom(g,x) ((x) >= (g)->blocks && (x) < (g)->alloc)
+struct Chunk {
+  Object *blocks, *alloc;
+  size_t size;
+  Chunk *next;  // next chunk in list
+};
+
+static Chunk *Chunk_new(size_t size) {
+  Chunk *c = err_malloc(sizeof(Chunk));
+  c->blocks = err_malloc(size * sizeof(Object));
+  c->alloc = c->blocks;
+  c->size = size;
+  c->next = NULL;
+  return c;
+}
+
+static void Chunk_free(Chunk *c) {
+  if (!c) return;
+  Chunk_free(c->next);
+  free(c);
+}
+
+static int Chunk_contains(Chunk *c, Object *x) {
+  if (!c)
+    return 0;
+  else if (x >= c->blocks && x < c->alloc)
+    return 1;
+  return Chunk_contains(c->next, x);
+}
 
 // Create a new heap with associated state.
 Heap *Heap_new(SyState *s) {
   Heap *h = err_malloc(sizeof(Heap));
-  for (size_t i = 0; i <= N_GENERATIONS; i++) {
-    Generation *g = h->g0 + i;
-    g->blocks = err_malloc(GENERATION_SIZE * sizeof(Object));
-    g->alloc = g->blocks;
-    g->size = GENERATION_SIZE;
-  }
-  h->gn = h->g0 + N_GENERATIONS - 1;
+  h->g0 = Chunk_new(DEFAULT_CHUNK_SIZE);
+  h->g1 = Chunk_new(DEFAULT_CHUNK_SIZE);
+  h->swap = Chunk_new(DEFAULT_CHUNK_SIZE);
   h->s = s;
+  h->after = FULL_GC_AFTER;
   return h;
 }
 
 void Heap_free(Heap *h) {
-  for (size_t i = 0; i <= N_GENERATIONS; i++)
-    free(h->g0[i].blocks);
+  Chunk_free(h->g0);
+  Chunk_free(h->g1);
+  Chunk_free(h->swap);
   free(h);
 }
 
@@ -31,9 +57,11 @@ void Heap_free(Heap *h) {
 void *Heap_malloc(Heap *h, size_t size) {
   if (size == 0) return NULL;
   size_t n = objsize(size);
-  Generation *g0 = h->g0;
+  Chunk *g0 = h->g0;
   if (g0->alloc + n >= g0->blocks + g0->size) {
-    // Heap_resize(s);
+    Chunk *c = Chunk_new(MAX(n, DEFAULT_CHUNK_SIZE));
+    c->next = h->g0;
+    h->g0 = c;
   }
   Object *p = g0->alloc;
   g0->alloc += n;
@@ -60,6 +88,14 @@ char *Heap_strndup(Heap *h, const char *s, size_t n) {
 // Copy object reference to the to-space.
 static void copy_obj(Heap *h, Object **p) {
   Object *x = *p;
+
+  Chunk *to = h->g0;
+  if (Chunk_contains(h->swap, x)) {
+    *to->alloc = *x;
+    *p = to->alloc;
+    to->alloc++;
+  }
+
   // if (!x) return;
   // else if (type(x) == T_FWD) {  /* Already copied */
   //   *p = as(x).fwd;
@@ -91,32 +127,21 @@ static void copy_obj(Heap *h, Object **p) {
 }
 
 void Heap_collect(Heap *h) {
-  // printf("before gc: %zu cells\n", heap_next - heap);
-
   SyState *s = h->s;
 
-  Object **p = &car(s->stack);
-  Object *x = *p;
+  // swap young generation
+  Chunk *swap = h->g0;
+  h->g0 = h->swap;
+  h->swap = swap;
 
-  Generation *g = h->g0;
-  while (g < h->gn) {
-    Generation *g1 = g + 1;
-    if (isfrom(g, x)) {
-      *g1->alloc = *x;
-      *p = g1->alloc;
-      g1->alloc++;
-      break;
-    }
-    g = g1;
+  // copy roots
+  // TODO: figure out what roots look like
+  // TODO: scan pointer + chunks issue
+
+  for (size_t i = 0; i < s->top; i++) {
+    copy_obj(h, s->stack + i);
   }
 
-  // Object *swap = h->from;
-  // h->from = h->next = h->to;
-  // h->to = swap;
-
-  // for (size_t i = 0; i < roots_len; i++) {
-  //   copy_obj(h, roots[i]);
-  // }
-
-  // printf("after gc: %zu cells\n", heap_next - heap);
+  // reset old generation (TODO: for all chunks)
+  h->swap->alloc = h->swap->blocks;
 }

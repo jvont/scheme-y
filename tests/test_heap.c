@@ -17,8 +17,8 @@ static Heap_clear(Heap *h) {
   h->gn = h->g0 + N_GENERATIONS - 1;
 }
 
-static size_t Gen_blocks(Generation *g) {
-  return g->alloc - g->blocks;
+static size_t Chunk_size(Chunk *c) {
+  return c->alloc - c->blocks;
 }
 
 int test_malloc() {

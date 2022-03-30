@@ -2,20 +2,16 @@
 ** Managed heap.
 **
 ** The heap uses a generational garbage collector to manage memory. New
-** objects are usually allocated in the yougest generation (g0). Memory
+** objects are usually allocated in the youngest generation (g0). Memory
 ** is allocated at the next available space (alloc) of the given generation.
 ** All special data structures (strings, vectors, etc.) are stored in
-** contiguous memory, aligned to the size of a cell.
-**
-** Roots used for garbage collection are stored in an associated state (s).
-** Garbage collection is performed for a specified generation and below.
-** Each generation N is collected after log2(N-1) collections have occurred.
+** contiguous memory, aligned to the size of a cell. Roots used for garbage
+** collection are stored in an associated state (s).
 **
 ** On collection of a specific generation, objects from younger generations
 ** are copied to the next generation, while older generations are ignored.
 ** The oldest generation (gn) is made up of two generations, which are used
-** as swap spaces for collection. Copying collection is performed using
-** Cheney's algorithm.
+** as swap spaces for collection.
 */
 #ifndef HEAP_H
 #define HEAP_H
@@ -24,37 +20,30 @@
 
 #include <stddef.h>
 
-// Number of generations (total generations - 1)
-#define N_GENERATIONS 2
-
-// Default generation size (resizeable)
-#define GENERATION_SIZE 1024
+#define DEFAULT_CHUNK_SIZE 1024
+#define FULL_GC_AFTER 4
 
 // Convert size in bytes to size in objects, rounded up
 #define objsize(n) ((n + sizeof(Object) - 1) / sizeof(Object))
 
-typedef struct Generation {
-  Object *blocks, *alloc;
-  size_t size;
-} Generation;
+typedef struct Chunk Chunk;
 
 typedef struct Heap {
-  Generation g0[N_GENERATIONS + 1];
-  Generation *gn;  // current tenured swap space
-  SyState *s;  // associated state (roots)
-  unsigned int current, count;  // current collected generation
+  Chunk *g0, *g1, *swap;  // generations
+  SyState *s;
+  unsigned int after;  // full sweep counter
 } Heap;
 
 Heap *Heap_new(SyState *s);
 void Heap_free(Heap *h);
 
-// void *Heap_genmalloc(Heap *h, int gen, size_t size);
-// void *Heap_gencalloc(Heap *h, int gen, size_t n, size_t size);
-// void *Heap_genrealloc(Heap *h, int gen, void *ptr, size_t size);
-
 void *Heap_malloc(Heap *h, size_t size);
 void *Heap_calloc(Heap *h, size_t n, size_t size);
 // void *Heap_realloc(Heap *h, void *ptr, size_t size);
+
+// void *Heap_malloc2(Heap *h, size_t size);
+// void *Heap_calloc2(Heap *h, size_t n, size_t size);
+// void *Heap_realloc2(Heap *h, void *ptr, size_t size);
 
 char *Heap_strdup(Heap *h, const char *s);
 char *Heap_strndup(Heap *h, const char *s, size_t n);
