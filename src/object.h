@@ -1,10 +1,13 @@
 /*
 ** Scheme object representation.
 **
-** Scheme contains two types of objects: lists and atoms. The LSB of object
-** pointers is tagged to indicate whether or not it is a list. Lists contain
-** two pointers (car and cdr) to other Scheme objects, while atoms are tagged
+** Scheme contains two types of objects: lists and atoms. Lists contain two
+** pointers (car and cdr) to other Scheme objects, while atoms are tagged
 ** unions containing a variety of different types.
+**
+** The type tag of an atom and car pointer of a list cell share the same
+** memory. To differentiate between the two, all atom tags have their LSB set
+** while list cells have a minimum memory alignment of 8 bytes.
 **
 ** Both vectors and tables use the same dynamic array object under the hood.
 **
@@ -50,15 +53,25 @@ typedef struct List {
   Object *_cdr;
 } List;
 
+#define tbit(x) ((1 << (x)) | 0x1)
+
+enum {
+  T_INTEGER = tbit(0),
+  T_REAL = tbit(1),
+  T_CHARACTER = tbit(2),
+  T_STRING = tbit(3),
+  T_PROCEDURE = tbit(4),
+  T_SYNTAX = tbit(5),
+  T_VECTOR = tbit(6),
+  T_TABLE = tbit(7),
+  T_PORT = tbit(8),
+  T_FWD = tbit(9)
+  // T_RATIONAL,
+  // T_COMPLEX,
+};
+
 typedef struct Atom {
-  enum {
-    T_INTEGER, T_REAL, /* T_RATIONAL, T_COMPLEX, */
-    T_CHARACTER, T_STRING,
-    T_PROCEDURE, T_SYNTAX,
-    T_VECTOR, T_TABLE,
-    T_PORT,
-    T_FWD
-  } type;
+  uintptr_t type;  // _car-aligned
   union {
     int32_t integer;
     float real;
@@ -77,23 +90,24 @@ typedef struct Atom {
 union Object {
   Atom atom;
   List list;
-};
+} __attribute__((aligned(8)));
 
 struct Vector {
   size_t len, size;
   Object items[];  // flexible array member (C99)
 };
 
-#define cast_p2i(p) ((uintptr_t)((void *)(p)))
+// #define cast_p2i(p) ((uintptr_t)((void *)(p)))
 
-#define isatom(x) ((cast_p2i(x) & 0x1) == 0x0)
+// Is the first bit set?
+#define isfbs(x) (((x)->atom.type) & 0x1)
+
+#define isatom(x) (isfbs(x) == 0x1)
 #define type(x) (((Atom *)(x))->type)
 #define as(x)   (((Atom *)(x))->as)
 
-#define tag(x)   (cast_p2i(x) | 0x1)
-#define untag(x) (cast_p2i(x) & ~0x1)
-#define islist(x) ((cast_p2i(x) & 0x1) == 0x1)
-#define car(x) (((List *)untag(x))->_car)
-#define cdr(x) (((List *)untag(x))->_cdr)
+#define islist(x) (isfbs(x) == 0x0)
+#define car(x) (((List *)(x))->_car)
+#define cdr(x) (((List *)(x))->_cdr)
 
 #endif

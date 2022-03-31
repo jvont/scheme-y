@@ -17,17 +17,18 @@ void Sy_close(SyState *s) {
 }
 
 static void Sy_pushint(SyState *s, int32_t i) {
-  Object *x = Heap_malloc(s->h, sizeof(Object));
+  Object *x = Heap_object(s->h);
   type(x) = T_INTEGER;
   as(x).integer = i;
   s->stack[s->top++] = x;
 }
 
-static Object *Sy_pushcons(SyState *s) {
-  Object *x = Heap_malloc(s->h, sizeof(Object));
-  x = (Object *)tag(x);
+static void Sy_cons(SyState *s) {
+  Object *x = Heap_object(s->h);
+  car(x) = s->stack[--s->top];
+  cdr(x) = s->stack[--s->top];
+  s->stack[s->top + 1] = NULL;
   s->stack[s->top++] = x;
-  return x;
 }
 
 int main(int argc, char **argv) {
@@ -41,14 +42,7 @@ int main(int argc, char **argv) {
   Sy_pushint(s, 1);
   Sy_pushint(s, 2);
   Sy_pushint(s, 3);
-
-  Object *a = s->stack[s->top - 1];
-  Object *c = Sy_pushcons(s);
-  Object *d = Heap_malloc(s->h, sizeof(Object));
-  type(d) = T_REAL;
-  as(d).real = 3.14;
-  car(c) = a;
-  cdr(c) = d;
+  Sy_cons(s);
 
   Heap_collect(h);
   Heap_collect(h);
