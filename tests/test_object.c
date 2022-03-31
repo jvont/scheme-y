@@ -16,14 +16,14 @@ int test_islist() {
 
 int test_islist_tag() {
   Object x;
-  Object *xref = (Object *)tag(&x);
+  Object *xref = (Object *)taglist(&x);
   return islist(xref) ? TEST_PASS : TEST_FAIL;
 }
 
 int test_car_cdr() {
   Object x, _car;
   x.list._car = &_car;
-  Object *xref = (Object *)tag(&x);
+  Object *xref = (Object *)taglist(&x);
   return car(xref) == &_car ? TEST_PASS : TEST_FAIL;
 }
 
@@ -36,7 +36,7 @@ int test_isatom() {
 
 int test_isatom_tag() {
   Object x;
-  Object *xref = (Object *)tag(&x);
+  Object *xref = (Object *)taglist(&x);
   return isatom(xref) ? TEST_FAIL : TEST_PASS;
 }
 

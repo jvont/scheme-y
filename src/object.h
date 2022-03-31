@@ -53,11 +53,11 @@ typedef struct List {
 typedef struct Atom {
   enum {
     T_INTEGER, T_REAL, /* T_RATIONAL, T_COMPLEX, */
-    T_CHARACTER,
-    T_STRING, T_SYMBOL,
+    T_CHARACTER, T_STRING,
     T_PROCEDURE, T_SYNTAX,
     T_VECTOR, T_TABLE,
-    T_PORT
+    T_PORT,
+    T_FWD
   } type;
   union {
     int32_t integer;
@@ -68,32 +68,32 @@ typedef struct Atom {
     Syntax *syntax;
     Vector *vector;
     FILE *port;
+    Object *fwd;
   } as;
 } Atom;
 
 // C99 - section 6.7.2.1, paragraph 14: A pointer to a union object, suitably
 // converted, points to each of its members [...], and vice versa.
 union Object {
-  List list;
   Atom atom;
+  List list;
 };
 
 struct Vector {
-  Object *items;
   size_t len, size;
+  Object items[];  // flexible array member (C99)
 };
 
 #define cast_p2i(p) ((uintptr_t)((void *)(p)))
 
-#define tag(x)   (cast_p2i(x) | 0x1)
-#define untag(x) (cast_p2i(x) & ~0x1)
-
-#define islist(x) ((cast_p2i(x) & 0x1) == 0x1)
-#define car(x) (((List *)untag(x))->_car)
-#define cdr(x) (((List *)untag(x))->_cdr)
-
 #define isatom(x) ((cast_p2i(x) & 0x1) == 0x0)
 #define type(x) (((Atom *)(x))->type)
 #define as(x)   (((Atom *)(x))->as)
+
+#define tag(x)   (cast_p2i(x) | 0x1)
+#define untag(x) (cast_p2i(x) & ~0x1)
+#define islist(x) ((cast_p2i(x) & 0x1) == 0x1)
+#define car(x) (((List *)untag(x))->_car)
+#define cdr(x) (((List *)untag(x))->_cdr)
 
 #endif
