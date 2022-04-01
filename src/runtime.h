@@ -46,7 +46,7 @@ typedef struct Instruction {
 // state stores VM info (instructions, ip/pc, stack, heap, etc.)
 
 struct SyState {
-  Object *stack[10];
+  Object stack[16];
   size_t top;
   
 

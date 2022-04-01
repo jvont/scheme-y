@@ -6,9 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Convert size in bytes to size in objects, rounded up
-#define objsize(n) ((n + sizeof(Object) - 1) / sizeof(Object))
-
 // ---------------------------------------------------------------------------
 // Chunk utilities
 // ---------------------------------------------------------------------------
@@ -173,51 +170,56 @@ size_t Heap_size(Heap *h) {
 // Garbage collection
 // ---------------------------------------------------------------------------
 
-static void copy_obj(Heap *h, Object **p) {
-  Object *fwd, *x = *p;
+// Forward an object to the to-space.
+static void forward_object(Heap *h, Object **p) {
+  Object *x = *p;
+  if (!x)
+    return;
+  else if (type(x) == T_FWD)  // already forwarded?
+    *p = as(x).fwd;
+  else {
+    Object *fwd = Heap_object(h);
+    *fwd = *x;
+    type(x) = T_FWD;
+    as(x).fwd = fwd;
+    *p = fwd;
+  }
+}
+
+static void copy_data(Heap *h, Object *x);
+
+static Vector *forward_vector(Heap *h, Vector **p) {
+  Vector *v = *p;
+  size_t n = objsize(sizeof(Vector)) + v->size;
+  Vector *fwd = Heap_calloc(h, n, sizeof(Object));
+  *fwd = *v;
+
+  memcpy(fwd->items, v->items, fwd->len * sizeof(Object));
+  for (size_t i = 0; i < fwd->len; i++) {
+    copy_data(h, &fwd->items[i]);
+  }
+  *p = fwd;
+}
+
+// Copy and update an object's referenced data.
+static void copy_data(Heap *h, Object *x) {
   if (!x)
     return;
   else if (islist(x)) {
-    fwd = Heap_object(h);
-    *fwd = *x;
-    copy_obj(h, &car(fwd));
-    copy_obj(h, &cdr(fwd));
+    forward_object(h, &car(x));
+    forward_object(h, &cdr(x));
   }
-  else switch (type(x)) {
-    case T_STRING: {
-      fwd = Heap_object(h);
-      *fwd = *x;
-      as(fwd).string = Heap_strdup(h, as(x).string);
+  else switch(type(x)) {
+    case T_STRING:
+      as(x).string = Heap_strdup(h, as(x).string);
       break;
-    }
     case T_VECTOR:
-    case T_TABLE: {
-      // TODO: copy an object's references (strings, vectors, etc.) to separate space,
-      // allowing us to scan the main chunk with scan++
-
-      
-      // size_t size = as(x).vector->size;
-      // fwd = Heap_malloc(h, sizeof(Vector) + size * sizeof(Object));
-      // *fwd = *x;
-      // Object *items = as(fwd).vector->items;
-      // for (size_t i = 0; i < size; i++) {
-      //   copy_obj(h, items + i);
-      // }
+    case T_TABLE:
+      forward_vector(h, &as(x).vector);
       break;
-    }
-    case T_FWD: {
-      *p = as(x).fwd;
-      return;  // skip
-    }
-    default: {
-      fwd = Heap_object(h);
-      *fwd = *x;
+    default:
       break;
-    }
   }
-  type(x) = T_FWD;
-  as(x).fwd = fwd;
-  *p = fwd;
 }
 
 static void compact_chunk(Chunk *c, size_t size) {
@@ -225,15 +227,16 @@ static void compact_chunk(Chunk *c, size_t size) {
   c->prev = NULL;
   if (c->size < size) {
     c->blocks = err_realloc(c->blocks, size);
-    c->alloc = c->blocks;
     c->size = size;
   }
+  c->alloc = c->blocks;
 }
 
 // Compact swap space of heap based on current total heap size.
 static void compact_swap(Heap *h) {
   size_t obj_count = Chunk_count(h->g0->obj) + Chunk_count(h->g1->obj);
   compact_chunk(h->swap->obj, obj_count);
+  
   size_t data_count = Chunk_count(h->g0->data) + Chunk_count(h->g1->data);
   compact_chunk(h->swap->data, data_count);
 }
@@ -250,16 +253,15 @@ void Heap_collect(Heap *h) {
   Chunk *c0 = h->g0->obj;
   Object *scan = c0->alloc = c0->blocks;
 
-  // copy roots
-  // TODO: figure out what roots look like
-  // TODO: scan pointer + chunks issue
-  for (size_t i = 0; i < s->top; i++) {
-    copy_obj(h, s->stack + i);
+  // copy stack references
+  for (size_t i = 0; i <= s->top; i++) {
+    copy_data(h, &s->stack[i]);
   }
 
-  // for (; scan != c0->alloc; scan++) {
-  //   copy_obj(h, &scan);
-  // }
+  // copy heap references
+  for (; scan != c0->alloc; scan++) {
+    copy_data(h, scan);
+  }
 
   // compact swap generation into single chunk
   compact_swap(h);

@@ -23,6 +23,9 @@
 #define DEFAULT_HEAP_SIZE 1024
 #define FULL_GC_AFTER 4
 
+// Convert size in bytes to size in objects, rounded up
+#define objsize(n) ((n + sizeof(Object) - 1) / sizeof(Object))
+
 typedef struct Heap Heap;
 
 Heap   *Heap_new(SyState *s);
