@@ -6,8 +6,9 @@
 ** unions containing a variety of different types.
 **
 ** The type tag of an atom and car pointer of a list cell share the same
-** memory. To differentiate between the two, all atom tags have their LSB set
-** while list cells have a minimum memory alignment of 8 bytes.
+** memory. To differentiate between the two, all atom tags are odd-numbered
+** (have their LSB set), while all list cells have a minimum memory alignment
+** of 8 bytes (for 32-bit systems).
 **
 ** Both vectors and tables use the same dynamic array object under the hood.
 **
@@ -53,21 +54,17 @@ typedef struct List {
   Object *_cdr;
 } List;
 
-#define tbit(x) ((1 << (x)) | 0x1)
-
 enum {
-  T_INTEGER = tbit(0),
-  T_REAL = tbit(1),
-  T_CHARACTER = tbit(2),
-  T_STRING = tbit(3),
-  T_PROCEDURE = tbit(4),
-  T_SYNTAX = tbit(5),
-  T_VECTOR = tbit(6),
-  T_TABLE = tbit(7),
-  T_PORT = tbit(8),
-  T_FWD = tbit(9)
-  // T_RATIONAL,
-  // T_COMPLEX,
+  T_INTEGER = 1,
+  T_REAL = 3,
+  T_CHARACTER = 5,
+  T_STRING = 7,
+  T_PROCEDURE = 9,
+  T_SYNTAX = 11,
+  T_VECTOR = 13,
+  T_TABLE = 15,
+  T_PORT = 17,
+  T_FWD = 19
 };
 
 typedef struct Atom {
@@ -96,8 +93,6 @@ struct Vector {
   size_t len, size;
   Object items[];  // flexible array member (C99)
 };
-
-// #define cast_p2i(p) ((uintptr_t)((void *)(p)))
 
 // Is the first bit set?
 #define isfbs(x) (((x)->atom.type) & 0x1)

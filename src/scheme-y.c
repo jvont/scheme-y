@@ -8,6 +8,8 @@
 SyState *Sy_open() {
   SyState *s = SyState_new();
   s->h = Heap_new(s);
+
+  s->top = 0;
   return s;
 }
 
@@ -22,20 +24,13 @@ static void Sy_pushint(SyState *s, int32_t i) {
   as(x).integer = i;
 }
 
-// 1. [x, y] <- stack   2.  [z]->[y] <- cdr
-//                           |->[x]  <- car
+//  STACK        CONS
+// [x, y]      [c]->[y]
+// [x, y, c]    |->[x]
 static void Sy_cons(SyState *s) {
-  Object *d = Heap_object(s->h);
-  *d = s->stack[s->top - 2];
-
-  Object *x = &s->stack[s->top - 2];
-  cdr(x) = d;
-
-  Object *a = Heap_object(s->h);
-  *a = s->stack[s->top - 1];
-  car(x) = a;
-
-  s->top--;
+  Object *c = &s->stack[s->top++];
+  car(c) = &s->stack[s->top - 3];
+  cdr(c) = &s->stack[s->top - 2];
 }
 
 static void Sy_pushvector(SyState *s, size_t size) {
@@ -55,19 +50,7 @@ int main(int argc, char **argv) {
   SyState *s = Sy_open();
   Heap *h = s->h;
 
-  s->top = 0;
-  Sy_pushint(s, 1);
-  Sy_pushint(s, 2);
-  Sy_pushint(s, 3);
-  Sy_cons(s);
-  // Sy_pushvector(s, 5);
-
-  printf("%zu\n", Heap_count(h));
-  Heap_collect(h);
-  printf("%zu\n", Heap_count(h));
-  Heap_collect(h);
-  printf("%zu\n", Heap_count(h));
-
+  
   Sy_close(s);
 
   return 0;

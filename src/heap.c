@@ -260,7 +260,7 @@ void Heap_collect(Heap *h) {
   Object *scan = c0->alloc = c0->blocks;
 
   // copy any references on the stack
-  for (size_t i = 0; i <= s->top; i++) {
+  for (size_t i = 0; i < s->top; i++) {
     copy_data(h, &s->stack[i]);
   }
 
