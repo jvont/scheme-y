@@ -145,21 +145,25 @@ void *Heap_calloc(Heap *h, size_t n, size_t size) {
   return p ? memset(p, 0, n * size) : NULL;
 }
 
+// Duplicate a null-terminated string.
 char *Heap_strdup(Heap *h, const char *s) {
   return Heap_strndup(h, s, strlen(s));
 }
 
+// Duplicate a string of length n.
 char *Heap_strndup(Heap *h, const char *s, size_t n) {
   char *d = Heap_malloc(h, n + 1);
-  return strcpy(d, s);
+  strcpy(d, s);
+  d[n] = '\0';
+  return d;
 }
 
-// Get the allocated object count.
+// Get the number of heap-allocated bytes.
 size_t Heap_count(Heap *h) {
   return Generation_count(h->g0) + Generation_count(h->g1);
 }
 
-// Get the total heap size.
+// Get the total heap size, in bytes.
 size_t Heap_size(Heap *h) {
   return (Generation_size(h->g0) + 
           Generation_size(h->g1) +
@@ -175,9 +179,9 @@ static void forward_object(Heap *h, Object **p) {
   Object *x = *p;
   if (!x)
     return;
-  else if (type(x) == T_FWD)  // already forwarded?
+  else if (type(x) == T_FWD)  // already forwarded
     *p = as(x).fwd;
-  else {
+  else if (Chunk_contains(h->swap->obj, x)) {  // in from-space
     Object *fwd = Heap_object(h);
     *fwd = *x;
     type(x) = T_FWD;
@@ -188,6 +192,7 @@ static void forward_object(Heap *h, Object **p) {
 
 static void copy_data(Heap *h, Object *x);
 
+// Forward a vector to the to-space.
 static Vector *forward_vector(Heap *h, Vector **p) {
   Vector *v = *p;
   size_t n = objsize(sizeof(Vector)) + v->size;
@@ -236,7 +241,7 @@ static void compact_chunk(Chunk *c, size_t size) {
 static void compact_swap(Heap *h) {
   size_t obj_count = Chunk_count(h->g0->obj) + Chunk_count(h->g1->obj);
   compact_chunk(h->swap->obj, obj_count);
-  
+
   size_t data_count = Chunk_count(h->g0->data) + Chunk_count(h->g1->data);
   compact_chunk(h->swap->data, data_count);
 }
@@ -245,6 +250,7 @@ void Heap_collect(Heap *h) {
   SyState *s = h->s;
 
   // swap young generation
+  // on full collection, swap old fellers, then run a collection swapping young
   Generation *swap = h->g0;
   h->g0 = h->swap;
   h->swap = swap;
@@ -253,12 +259,12 @@ void Heap_collect(Heap *h) {
   Chunk *c0 = h->g0->obj;
   Object *scan = c0->alloc = c0->blocks;
 
-  // copy stack references
+  // copy any references on the stack
   for (size_t i = 0; i <= s->top; i++) {
     copy_data(h, &s->stack[i]);
   }
 
-  // copy heap references
+  // scan copied references
   for (; scan != c0->alloc; scan++) {
     copy_data(h, scan);
   }

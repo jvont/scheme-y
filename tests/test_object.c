@@ -11,33 +11,33 @@ int test_object_size() {
 
 int test_islist() {
   Object x;
-  return islist(&x) ? TEST_FAIL : TEST_PASS;
+  x.list = (List) { ._car = NULL, ._cdr = NULL };
+  return islist(&x) ? TEST_PASS : TEST_FAIL;
 }
 
-int test_islist_tag() {
+int test_islist_atom() {
   Object x;
-  Object *xref = (Object *)taglist(&x);
-  return islist(xref) ? TEST_PASS : TEST_FAIL;
+  x.list = (List) { ._car = NULL, ._cdr = NULL };
+  return islist(&x) ? TEST_PASS : TEST_FAIL;
 }
 
 int test_car_cdr() {
-  Object x, _car;
+  Object x;
+  Object _car;
   x.list._car = &_car;
-  Object *xref = (Object *)taglist(&x);
-  return car(xref) == &_car ? TEST_PASS : TEST_FAIL;
+  return car(&x) == &_car ? TEST_PASS : TEST_FAIL;
 }
 
 int test_isatom() {
   Object x;
-  x.atom.type = T_INTEGER;
-  x.atom.as.integer = 5;
+  x.atom = (Atom) { .type = T_INTEGER, .as.integer = 5 };
   return isatom(&x) ? TEST_PASS : TEST_FAIL;
 }
 
-int test_isatom_tag() {
+int test_isatom_list() {
   Object x;
-  Object *xref = (Object *)taglist(&x);
-  return isatom(xref) ? TEST_FAIL : TEST_PASS;
+  x.atom = (Atom) { .type = T_INTEGER, .as.integer = 5 };
+  return isatom(&x) ? TEST_PASS : TEST_FAIL;
 }
 
 int test_type() {
@@ -56,11 +56,11 @@ int test_as() {
 
 Test table[] = {
   { test_object_size, "object size = 2 * pointer size" },
-  { test_islist, "islist() for untagged object" },
-  { test_islist_tag, "islist() for tagged object" },
-  { test_car_cdr, "car field access for tagged object" },
-  { test_isatom, "isatom() for untagged object" },
-  { test_isatom_tag, "isatom() for tagged object" },
+  { test_islist, "list -> islist" },
+  { test_islist_atom, "atom -> islist" },
+  { test_car_cdr, "car/cdr field access" },
+  { test_isatom, "atom -> isatom" },
+  { test_isatom_list, "list -> isatom" },
   { test_type, "type field access" },
   { test_as, "as field access" }
 };

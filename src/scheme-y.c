@@ -60,12 +60,12 @@ int main(int argc, char **argv) {
   Sy_pushint(s, 2);
   Sy_pushint(s, 3);
   Sy_cons(s);
-  Sy_pushvector(s, 5);
+  // Sy_pushvector(s, 5);
 
   printf("%zu\n", Heap_count(h));
   Heap_collect(h);
   printf("%zu\n", Heap_count(h));
-  Heap_object(h);
+  Heap_collect(h);
   printf("%zu\n", Heap_count(h));
 
   Sy_close(s);
