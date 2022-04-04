@@ -4,6 +4,8 @@
 #ifndef COMPILER_H
 #define COMPILER_H
 
+#include "object.h"
+
 // An instruction consists of an opcode and argument.
 typedef struct Instruction {
   enum {
