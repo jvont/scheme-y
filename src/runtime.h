@@ -19,14 +19,16 @@
 
 #include <stddef.h>
 
+#define STACK_MIN 16
+
 #define GLOBAL_ENV_SIZE 128  // global execution frame size
 
 #define DEFAULT_INPUT_PORT stdin
 #define DEFAULT_OUTPUT_PORT stdout
 
 struct SyState {
-  Object stack[16];
-  size_t top;
+  Object *stack;
+  size_t top, stack_size;
   
 
   int err;  // error status
@@ -36,6 +38,8 @@ struct SyState {
 SyState *SyState_new();
 void SyState_free(SyState *s);
 
+Object *SyState_push(SyState *s);
+void SyState_pop(SyState *s);
 
 // void SyState_run(SyState *s);
 

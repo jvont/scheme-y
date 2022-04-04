@@ -18,19 +18,22 @@ void Sy_close(SyState *s) {
   SyState_free(s);
 }
 
-static void Sy_pushint(SyState *s, int32_t i) {  
-  Object *x = &s->stack[s->top++];
+static void Sy_pushint(SyState *s, int32_t i) {
+  Object *x = SyState_push(s);
   type(x) = T_INTEGER;
   as(x).integer = i;
 }
 
-//  STACK        CONS
-// [x, y]      [c]->[y]
-// [x, y, c]    |->[x]
+static void Sy_pushstring(SyState *s, const char *str) {
+  Object *x = SyState_push(s);
+  type(x) = T_STRING;
+  as(x).string = Heap_strdup(s->h, str);
+}
+
 static void Sy_cons(SyState *s) {
-  Object *c = &s->stack[s->top++];
-  car(c) = &s->stack[s->top - 3];
-  cdr(c) = &s->stack[s->top - 2];
+  Object *x = SyState_push(s);
+  car(x) = &s->stack[s->top - 3];
+  cdr(x) = &s->stack[s->top - 2];
 }
 
 static void Sy_pushvector(SyState *s, size_t size) {
@@ -38,8 +41,6 @@ static void Sy_pushvector(SyState *s, size_t size) {
   Vector *v = Heap_calloc(s->h, n, sizeof(Object));
   v->len = 1;
   v->size = size;
-
-  v->items[0] = s->stack[1];
 
   Object *x = &s->stack[s->top++];
   type(x) = T_VECTOR;
@@ -50,7 +51,27 @@ int main(int argc, char **argv) {
   SyState *s = Sy_open();
   Heap *h = s->h;
 
-  
+  Object *a = Heap_object(h);
+  type(a) = T_INTEGER;
+  as(a).integer = 0;
+  Object *x = SyState_push(s);
+  car(x) = a;
+  cdr(x) = NULL;
+
+  Heap_collect(h);
+  printf("%zu\n", Heap_count(h));
+  printf("Location: %d\n", Heap_location(h, car(x)));
+  Heap_collect(h);
+  printf("Location: %d\n", Heap_location(h, car(x)));
+  Heap_collect(h);
+  printf("Location: %d\n", Heap_location(h, car(x)));
+  Heap_collect(h);
+  printf("Location: %d\n", Heap_location(h, car(x)));
+  Heap_collect(h);
+  printf("Location: %d\n", Heap_location(h, car(x)));
+  Heap_collect(h);
+  printf("Location: %d\n", Heap_location(h, car(x)));
+
   Sy_close(s);
 
   return 0;

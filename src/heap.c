@@ -12,6 +12,7 @@
 
 typedef struct Chunk {
   void *blocks, *alloc;
+  void *mark;  // previous collection end point
   size_t size;
   struct Chunk *prev;  // prev chunk in list
 } Chunk;
@@ -20,6 +21,7 @@ static Chunk *Chunk_new(size_t size) {
   Chunk *c = err_malloc(sizeof(Chunk));
   c->blocks = err_malloc(size);
   c->alloc = c->blocks;
+  c->mark = NULL;
   c->size = size;
   c->prev = NULL;
   return c;
@@ -31,26 +33,55 @@ static void Chunk_free(Chunk *c) {
   free(c);
 }
 
+// Allocate size bytes of memory, pushing a new chunk onto the front of the
+// list if needed.
+static void *Chunk_alloc(Chunk **p, size_t size) {
+  Chunk *c = *p;
+  if (size == 0)
+    return NULL;
+
+  if ((char *)c->alloc + size >= (char *)c->blocks + c->size) {
+    Chunk *cnew = Chunk_new(HEAP_MIN);
+    cnew->prev = c;
+    *p = cnew;
+  }
+  void *x = c->alloc;
+  c->alloc = (char *)c->alloc + size;
+  return x;
+}
+
+// Get total number of bytes used.
 static size_t Chunk_count(Chunk *c) {
   if (!c)
     return 0;
-  else
-    return ((char *)c->alloc - (char *)c->blocks) + Chunk_count(c->prev);
+  return ((char *)c->alloc - (char *)c->blocks) + Chunk_count(c->prev);
 }
 
+// Get total allocated chunk size.
 static size_t Chunk_size(Chunk *c) {
-  if (!c)
-    return 0;
-  else
-    return c->size + Chunk_size(c->prev);
+  return !c ? 0 : c->size + Chunk_size(c->prev);
 }
 
-static int Chunk_contains(Chunk *c, void *x) {
+// Check if chunk contains pointer.
+static int Chunk_contains(Chunk *c, void *p) {
   if (!c)
     return 0;
-  else if (x >= c->blocks && x < c->alloc)
+  else if (p >= c->blocks && p < c->alloc)
     return 1;
-  return Chunk_contains(c->prev, x);
+  return Chunk_contains(c->prev, p);
+}
+
+// Check if young heap pointer is below previous collection mark.
+// Returns 0 if no previous mark is found/the pointer is not located in the
+// given chunk. As such, the latter case should be checked first.
+int Chunk_marked(Chunk *c, void *p) {
+  if (!c)
+    return 0;
+  else if (!c->mark)
+    return Chunk_marked(c->prev, p);
+  else if (p < c->mark && p >= c->blocks)
+    return 1;
+  return 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -91,17 +122,17 @@ static size_t Generation_size(Generation *g) {
 struct Heap {
   Generation *g0, *g1, *swap;
   SyState *s;
-  unsigned int after;  // full sweep counter
+  unsigned int minor_gc;  // full sweep counter/flag
 };
 
 // Create a new heap with associated state.
 Heap *Heap_new(SyState *s) {
   Heap *h = err_malloc(sizeof(Heap));
-  h->g0 = Generation_new(DEFAULT_HEAP_SIZE, DEFAULT_HEAP_SIZE);
-  h->g1 = Generation_new(DEFAULT_HEAP_SIZE, DEFAULT_HEAP_SIZE);
-  h->swap = Generation_new(DEFAULT_HEAP_SIZE, DEFAULT_HEAP_SIZE);
+  h->g0 = Generation_new(HEAP_MIN, HEAP_MIN);
+  h->g1 = Generation_new(HEAP_MIN, HEAP_MIN);
+  h->swap = Generation_new(HEAP_MIN, HEAP_MIN);
   h->s = s;
-  h->after = FULL_GC_AFTER;
+  h->minor_gc = FULL_GC_AFTER;
   return h;
 }
 
@@ -116,7 +147,7 @@ void Heap_free(Heap *h) {
 Object *Heap_object(Heap *h) {
   Chunk *c0 = h->g0->obj;
   if ((Object *)c0->alloc >= (Object *)c0->blocks + c0->size) {
-    Chunk *c = Chunk_new(DEFAULT_HEAP_SIZE);
+    Chunk *c = Chunk_new(HEAP_MIN);
     c->prev = c0;
     h->g0->obj = c;
   }
@@ -130,7 +161,7 @@ void *Heap_malloc(Heap *h, size_t size) {
   if (size == 0) return NULL;
   Chunk *c0 = h->g0->data;
   if ((char *)c0->alloc + size >= (char *)c0->blocks + c0->size) {
-    Chunk *c = Chunk_new(MAX(size, DEFAULT_HEAP_SIZE));
+    Chunk *c = Chunk_new(MAX(size, HEAP_MIN));
     c->prev = c0;
     h->g0->data = c;
   }
@@ -170,6 +201,15 @@ size_t Heap_size(Heap *h) {
           Generation_size(h->swap));
 }
 
+int Heap_location(Heap *h, Object *x) {
+  if (Chunk_contains(h->g0->obj, x))
+    return 1;
+  else if (Chunk_contains(h->g1->obj, x))
+    return 2;
+  else
+    return 0;
+}
+
 // ---------------------------------------------------------------------------
 // Garbage collection
 // ---------------------------------------------------------------------------
@@ -179,10 +219,15 @@ static void forward_object(Heap *h, Object **p) {
   Object *x = *p;
   if (!x)
     return;
-  else if (type(x) == T_FWD)  // already forwarded
+  else if (type(x) == T_FWD)  // already forwarded?
     *p = as(x).fwd;
-  else if (Chunk_contains(h->swap->obj, x)) {  // in from-space
-    Object *fwd = Heap_object(h);
+  else if (Chunk_contains(h->swap->obj, x)) {  // is in from-space?
+    Object *fwd;
+    if (Chunk_marked(h->swap->obj, x))  // copy to old generation
+      fwd = Chunk_alloc(&h->g1->obj, sizeof(Object));
+    else  // copy to young generation
+      fwd = Chunk_alloc(&h->g0->obj, sizeof(Object));
+
     *fwd = *x;
     type(x) = T_FWD;
     as(x).fwd = fwd;
@@ -196,6 +241,10 @@ static void copy_data(Heap *h, Object *x);
 static Vector *forward_vector(Heap *h, Vector **p) {
   Vector *v = *p;
   size_t n = objsize(sizeof(Vector)) + v->size;
+  
+  // TODO: check location
+  // if (Chunk_marked())
+
   Vector *fwd = Heap_calloc(h, n, sizeof(Object));
   *fwd = *v;
 
@@ -250,11 +299,12 @@ void Heap_collect(Heap *h) {
   SyState *s = h->s;
 
   // swap young generation
-  // on full collection, swap old fellers, then run a collection swapping young
   Generation *swap = h->g0;
   h->g0 = h->swap;
   h->swap = swap;
 
+  // TODO: collect old generation (full sweep) 
+  
   // set scan/alloc pointers
   Chunk *c0 = h->g0->obj;
   Object *scan = c0->alloc = c0->blocks;
@@ -268,6 +318,14 @@ void Heap_collect(Heap *h) {
   for (; scan != c0->alloc; scan++) {
     copy_data(h, scan);
   }
+
+  if (h->minor_gc)
+    h->minor_gc--;
+  else
+    h->minor_gc = FULL_GC_AFTER;
+
+  h->g0->obj->mark = h->g0->obj->alloc;  // mark end of current gc
+  h->g0->data->mark = h->g0->data->alloc;
 
   // compact swap generation into single chunk
   compact_swap(h);

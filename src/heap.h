@@ -20,7 +20,7 @@
 
 #include <stddef.h>
 
-#define DEFAULT_HEAP_SIZE 1024
+#define HEAP_MIN 1024
 #define FULL_GC_AFTER 4
 
 // Convert size in bytes to size in objects, rounded up
@@ -33,6 +33,8 @@ void    Heap_free(Heap *h);
 
 size_t  Heap_count(Heap *h);
 size_t  Heap_size(Heap *h);
+
+int Heap_location(Heap *h, Object *x);
 
 Object *Heap_object(Heap *h);
 void   *Heap_malloc(Heap *h, size_t size);
