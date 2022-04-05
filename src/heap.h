@@ -22,8 +22,6 @@ void    Heap_free(Heap *h);
 size_t  Heap_count(Heap *h);
 size_t  Heap_size(Heap *h);
 
-int Heap_location(Heap *h, Object *x);
-
 Object *Heap_object(Heap *h);
 void   *Heap_malloc(Heap *h, size_t size);
 void   *Heap_calloc(Heap *h, size_t n, size_t size);

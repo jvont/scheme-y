@@ -84,48 +84,10 @@ void Sy_pushport(SyState *s, FILE *p) {
   as(x).port = p;
 }
 
-// void Sy_cons(SyState *s) {
-//   Object *x = SyState_push(s);
-//   car(x) = &s->stack[s->top - 3];
-//   cdr(x) = &s->stack[s->top - 2];
-// }
-
-// int main(int argc, char **argv) {
-//   SyState *s = Sy_open();
-//   Heap *h = s->h;
-
-//   Object *a = Heap_object(h);
-//   type(a) = T_INTEGER;
-//   as(a).integer = 0;
-//   Object *x = SyState_push(s);
-//   car(x) = a;
-//   cdr(x) = NULL;
-
-//   Heap_collect(h);
-//   printf("%zu\n", Heap_count(h));
-//   printf("Location: %d\n", Heap_location(h, car(x)));
-//   Heap_collect(h);
-//   printf("Location: %d\n", Heap_location(h, car(x)));
-//   Heap_collect(h);
-//   printf("Location: %d\n", Heap_location(h, car(x)));
-//   Heap_collect(h);
-//   printf("Location: %d\n", Heap_location(h, car(x)));
-//   Heap_collect(h);
-//   printf("Location: %d\n", Heap_location(h, car(x)));
-//   Heap_collect(h);
-//   printf("Location: %d\n", Heap_location(h, car(x)));
-
-//   Sy_close(s);
-
-//   return 0;
-// }
-
-#include "parser.h"
-
 int main(int argc, char **argv) {
   SyState *s = Sy_open();
 
-  Parser_parse(s);
+  
 
   Sy_close(s);
 

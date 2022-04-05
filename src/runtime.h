@@ -19,19 +19,43 @@
 
 #include <stddef.h>
 
-#define STACK_MIN 16
-
-#define GLOBAL_ENV_SIZE 128  // global execution frame size
+#define STACK_SIZE 16
+#define GLOBALS_SIZE 128
 
 #define DEFAULT_INPUT_PORT stdin
 #define DEFAULT_OUTPUT_PORT stdout
+
+enum {
+  E_OK,
+  E_EOF,
+  E_TOKEN,
+  E_DOTSEP,
+  E_RANGE,
+  E_PARSE
+};
+
+typedef struct Reader {
+  FILE *port;  // current input port
+  char *buffer;  // token buffer
+  size_t pos, size;
+  int ch;  // next character
+  size_t depth, lineno;  // read position
+  int prompt;  // interactive prompt?
+
+  int err;  // error status
+
+  SyState *s;  // associated state
+} Reader;
 
 struct SyState {
   Object *stack;
   size_t top, stack_size;
 
+  Reader r;
+
   char *buffer;  // read buffer
   int prompt;  // interactive prompt?
+
   int err;  // error status
   struct Heap *h;
 };

@@ -201,14 +201,14 @@ size_t Heap_size(Heap *h) {
           Generation_size(h->swap));
 }
 
-int Heap_location(Heap *h, Object *x) {
-  if (Chunk_contains(h->g0->obj, x))
-    return 1;
-  else if (Chunk_contains(h->g1->obj, x))
-    return 2;
-  else
-    return 0;
-}
+// static int Heap_location(Heap *h, Object *x) {
+//   if (Chunk_contains(h->g0->obj, x))
+//     return 1;
+//   else if (Chunk_contains(h->g1->obj, x))
+//     return 2;
+//   else
+//     return 0;
+// }
 
 // ---------------------------------------------------------------------------
 // Garbage collection

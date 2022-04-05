@@ -7,9 +7,11 @@
 SyState *SyState_new() {
   SyState *s = err_malloc(sizeof(SyState));
 
-  s->stack = err_calloc(STACK_MIN, sizeof(Object));
+  s->stack = err_calloc(STACK_SIZE, sizeof(Object));
   s->top = 0;
-  s->stack_size = STACK_MIN;
+  s->stack_size = STACK_SIZE;
+
+  s->r.buffer = NULL;
 
   s->h = Heap_new(s);
   

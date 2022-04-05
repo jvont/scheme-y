@@ -1,9 +1,9 @@
 # TODO List
 
-- finish meta-circular evaluator
+- bytecode interpreter
+- stack API
 
-- make heap structures global (separate out from SchemeY state)
-- save parse results left-to-right (ensuring they are reachable by GC)
+- function registry (library)
 
-- allocate interned symbols outside of managed heap - they are never collected
-- roots are then values in global table, along with registers/stack
+- heap intern strings
+- parser (read) builtin

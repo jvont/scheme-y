@@ -22,6 +22,8 @@ typedef struct Instruction {
   unsigned int arg;
 } Instruction;
 
+// TODO: function registry (allow redefinition of builtin keywords)
+
 typedef struct Closure {
 
   Instruction *code;

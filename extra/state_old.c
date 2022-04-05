@@ -6,10 +6,10 @@
 void sy_init(State *s) {
   /* global variables (internal structure, never referenced) */
   size_t vs = objsize(sizeof(Vector));
-  s->globals = calloc(vs + GLOBAL_ENV_SIZE, sizeof(Cell));
+  s->globals = calloc(vs + GLOBALS_SIZE, sizeof(Cell));
   if (!s->globals) exit(1);  
   s->globals->len = 0;
-  s->globals->size = GLOBAL_ENV_SIZE;
+  s->globals->size = GLOBALS_SIZE;
 
   /* default ports (collected, since they may be referenced) */
   s->inport = mk_port(stdin);

@@ -8,6 +8,9 @@
 #include <stdint.h>
 #include <stdio.h>
 
+// Read buffer size
+#define BUFFER_SIZE 1024
+
 // Interpreter state
 typedef struct SyState SyState;
 
