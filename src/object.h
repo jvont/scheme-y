@@ -59,12 +59,11 @@ enum {
   T_REAL = 3,
   T_CHARACTER = 5,
   T_STRING = 7,
-  T_PROCEDURE = 9,
-  T_SYNTAX = 11,
-  T_VECTOR = 13,
-  T_TABLE = 15,
-  T_PORT = 17,
-  T_FWD = 19
+  T_FFUNCTION = 9,
+  T_VECTOR = 11,
+  T_TABLE = 13,
+  T_PORT = 15,
+  T_FWD = 17
 };
 
 typedef struct Atom {
@@ -74,8 +73,7 @@ typedef struct Atom {
     float real;
     uint32_t character;
     char *string;
-    Procedure *procedure;
-    Syntax *syntax;
+    FFunction *ffunction;
     Vector *vector;
     FILE *port;
     Object *fwd;

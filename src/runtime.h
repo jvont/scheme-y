@@ -29,8 +29,9 @@
 struct SyState {
   Object *stack;
   size_t top, stack_size;
-  
 
+  char *buffer;  // read buffer
+  int prompt;  // interactive prompt?
   int err;  // error status
   struct Heap *h;
 };
