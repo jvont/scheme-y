@@ -1,51 +1,15 @@
 # Memory Management
 
-David A. Moon, ‘‘Garbage collection in a large LISP system,’’ ACM Symposium on LISP and Func-
-tional Programming, pp. 235-246, ACM, 1984.     
+The garbage collection scheme outlined below is inspired by [Erlang's garbage collector](https://www.erlang.org/doc/apps/erts/garbagecollection).
 
-## Object Memory Layout
+## Allocation
 
-There are two types of objects in Scheme: lists and atoms. Lists store a `car` and `cdr` pointer to other objects, representing a singly linked list. Atoms store tagged data, including numbers, strings, arrays, function pointers, and streams.
+All data is allocated in preallocated memory blocks called **Chunks**. Chunks represent system-allocated blocks of general-purpose memory, stored as elements in a singly-linked list. New data is allocated at the next available position of the current Chunk. Whenever more memory is needed, a Chunk of size greater than or equal to the requested memory size is pushed to the front of the list.
 
-Below is an example of how the pair `(x . 42)` is stored in memory.
+Separate lists of Chunks are used to store Scheme objects and their associated data (strings, vectors, etc.), to allow objects to be collected efficiently using Cheney's algorithm for copying collection. Each pair of lists of Chunks is called a **Generation**, and the heap is composed of a young and old generation.
 
-```
-+-----------+    +-----------+
-| car | cdr +--->| int | 42  |
-+--+--------+    +-----------+
-   |
-   |    +-----------+
-   +--->+ str | "x" |
-        +-----------+
-```
+## Garbage collection
 
-## Garbage Collector
+The heap uses a generational garbage collector to manage memory. New objects are allocated in the young generation, `g0`. When a collection occurs, references held by root objects (located in a Scheme state) to objects in `g0` are copied to a transitory generation, called the to-space, using breadth-first search. Once all object references are copied, the to-space is swapped with `g0`. The new size of `g0` is marked, and the transitory generation is resized based on the current number of allocated objects, converting any additional Chunks into a single Chunk of the appropriate size.
 
-G1 contains tenured objects
-
-Heap contains our roots, stack contains objects which may or may not be 
-
-| from      |           | | to        |           |
-|-----------|-----------|-|-----------|-----------|
-| **addr**  | **data**  | | **addr**  | **data**  |
-| 4         | e         | | 9         |           |
-| 3         | d         | | 8         |           |
-| 2         | c         | | 7         |           |
-| 1         | b         | | 6         |           |
-| 0         | a         | | 5         |           |
-
-
-
-| from      |           | | to        |           |
-|-----------|-----------|-|-----------|-----------|
-| **addr**  | **data**  | | **addr**  | **data**  |
-| 4         | 7         | | 9         |           |
-| 3         | d         | | 8         |           |
-| 2         | c         | | 7         | e         |
-| 1         | 6         | | 6         | b         |
-| 0         | 5         | | 5         | a         |
-
-
-
-
-
+Objects in `g0` which live longer than one collection (based on the marked size of `g0`) are copied to the old generation, `g1`. Collection of `g1` occurs after a specified number of collections of `g0`, using the same procedure as above. In a full collection, objects from both `g0` and `g1` are copied to the to-space, before swapping it with `g1`.

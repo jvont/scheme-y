@@ -1,17 +1,5 @@
 /*
 ** Managed heap.
-**
-** The heap uses a generational garbage collector to manage memory. New
-** objects are usually allocated in the youngest generation (g0). Memory
-** is allocated at the next available space (alloc) of the given generation.
-** All special data structures (strings, vectors, etc.) are stored in a
-** separate chunk from objects, which are scanned during garbage collection
-** using Cheney's algorithm.
-**
-** On collection of a specific generation, objects from younger generations
-** are copied to the next generation, while older generations are ignored.
-** The oldest generation (gn) is made up of two generations, which are used
-** as swap spaces for collection.
 */
 #ifndef HEAP_H
 #define HEAP_H

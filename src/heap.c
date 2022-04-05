@@ -121,7 +121,7 @@ static size_t Generation_size(Generation *g) {
 
 struct Heap {
   Generation *g0, *g1, *swap;
-  SyState *s;
+  SyState *s;  // roots
   unsigned int minor_gc;  // full sweep counter/flag
 };
 

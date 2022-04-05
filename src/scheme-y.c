@@ -8,13 +8,8 @@
 
 SyState *Sy_open() {
   SyState *s = SyState_new();
-  s->h = Heap_new(s);
 
-  s->prompt = 1;
-
-  s->buffer = NULL;
-
-  s->top = 0;
+  
   return s;
 }
 

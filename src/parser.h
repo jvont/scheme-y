@@ -1,7 +1,5 @@
 /*
 ** Expression parser.
-**
-** 
 */
 #ifndef PARSER_H
 #define PARSER_H
@@ -18,8 +16,6 @@ enum {
   E_RANGE,
   E_PARSE
 };
-
-typedef struct Parser Parser;
 
 int Parser_parse(SyState *s);
 

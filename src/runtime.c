@@ -11,6 +11,11 @@ SyState *SyState_new() {
   s->top = 0;
   s->stack_size = STACK_MIN;
 
+  s->h = Heap_new(s);
+  
+  s->prompt = 1;
+  s->buffer = NULL;
+
   return s;
 }
 

@@ -32,6 +32,7 @@ static void Parser_init(SyState *s, Parser *p) {
   p->port = DEFAULT_INPUT_PORT;  // TODO: check top of stack for port
 
   Sy_pushnstring(s, "", BUFFER_SIZE);
+  p->buffer = as(&s->stack[s->top - 1]).string;
   // p->buffer = as(Sy_gettop(s)).string;
 
   p->buffpos = 0;
@@ -47,7 +48,7 @@ static void Parser_init(SyState *s, Parser *p) {
 }
 
 // Get user input, printing prompt to stdout.
-static void input_prompt(Parser *p) {
+static int input_prompt(Parser *p) {
   int c = '\n';
   while (c == '\n') {
     if (p->depth) {  // print prompt based on nesting
@@ -64,11 +65,11 @@ static void input_prompt(Parser *p) {
 
 // Get the next character from file/interactive prompt.
 static void next(Parser *p) {
-  if (p->s->prompt) {  // prompt
+  if (p->prompt) {  // prompt
     if (p->lookahead == '\n')
-      input_prompt(p);
+      p->lookahead = input_prompt(p);
     else
-      p->lookahead = fgetc(stdin);
+      p->lookahead = fgetc(p->port);
   }
   else {  // file
     p->lookahead = fgetc(p->port);
@@ -133,8 +134,9 @@ static int parse_identifier(Parser *p) {
     next(p);
   }
   save(p, '\0');
-  if (isdelim(p->lookahead))
+  if (!isdelim(p->lookahead))
     return E_TOKEN;
+
   Sy_pushstring(p->s, p->buffer);
   // Sy_intern(p->s, p->buffer);
   return E_OK;
@@ -148,12 +150,20 @@ static int parse_list(Parser *p) {
   if (p->lookahead == ')') {
     p->depth--;
     next(p);
-    return NULL;
+    return E_OK;
   }
   // int dotsep = (p->lookahead == '.');
 
   while (p->lookahead != ')') {
-    parse_expr(p);
+
+    // TODO: API methods for creating lists (cons)
+
+    Sy_pushlist(p->s, NULL, NULL);
+    
+    Object *cons = &p->s->stack[p->s->top - 1];
+
+    int err = parse_expr(p);
+
     // Object *val = Sy_pop()
 
   }
@@ -163,6 +173,7 @@ static int parse_list(Parser *p) {
   // if (dotsep && rest)
   //   p->error = E_DOTSEP;
   // return dotsep ? obj : cons(obj, rest);
+  return E_OK;
 }
 
 // Parse an expression.
@@ -258,6 +269,6 @@ int Parser_parse(SyState *s) {
   next(&p);
   int r = parse_expr(&p);
 
-  if (s->err)
-    read_error(&p);
+  // if (s->err)
+  //   read_error(&p);
 }
