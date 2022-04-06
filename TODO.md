@@ -1,9 +1,12 @@
 # TODO List
 
-- bytecode interpreter
 - stack API
+  - error handling
 
-- function registry (library)
+- bytecode interpreter
+
+- global registry
+- register ffunctions (library)
 
 - heap intern strings
 - parser (read) builtin

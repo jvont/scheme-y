@@ -1,3 +1,6 @@
+#include "scheme-y.h"
+#include "runtime.h"
+
 static void write_obj(Object *obj, FILE *stream);
 
 static void write_list(Object *obj, FILE *stream) {
@@ -86,4 +89,19 @@ Object *sy_write(Object *args) {
   write_obj(car(args), stream);
   fputc('\n', stream);
   return NULL;
+}
+
+int main(int argc, char **argv) {
+  SyState *s = sy_open();
+
+  int err = E_OK;
+  while (!err) {
+    err = read_read(s);
+    print_obj(s->stack);
+    SyState_pop(s);
+  }
+
+  sy_close(s);
+
+  return 0;
 }

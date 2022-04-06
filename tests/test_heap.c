@@ -27,14 +27,6 @@ int test_malloc() {
   return n == 2 * sizeof(Object) ? TEST_PASS : TEST_FAIL;
 }
 
-int test_calloc() {
-  Heap *h = Heap_new(s);
-  Object *x = Heap_calloc(h, 2, sizeof(Object));
-  int cmp = memcmp(x, x + 1, sizeof(Object));
-  Heap_free(h);
-  return cmp == 0 ? TEST_PASS : TEST_FAIL;
-}
-
 int test_strdup() {
   Heap *h = Heap_new(s);
   char *src = "test";
@@ -98,7 +90,6 @@ int test_collect_all() {
 Test table[] = {
   { test_object, "allocate object" },
   { test_malloc, "allocate data" },
-  { test_calloc, "allocate contiguous data array" },
   { test_strdup, "duplicate string data" },
   { test_collect_all, "collect without roots" },
   // { test_collect_root, "collect roots" },

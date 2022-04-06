@@ -24,7 +24,6 @@ size_t  Heap_size(Heap *h);
 
 Object *Heap_object(Heap *h);
 void   *Heap_malloc(Heap *h, size_t size);
-void   *Heap_calloc(Heap *h, size_t n, size_t size);
 char   *Heap_strdup(Heap *h, const char *s);
 char   *Heap_strndup(Heap *h, const char *s, size_t n);
 

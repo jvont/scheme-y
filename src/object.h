@@ -8,13 +8,10 @@
 ** The type tag of an atom and car pointer of a list cell share the same
 ** memory. To differentiate between the two, all atom tags are odd-numbered
 ** (have their LSB set), while all list cells have a minimum memory alignment
-** of 8 bytes (for 32-bit systems).
+** of 8 bytes (for 32-bit systems). This allows us to safely check the type
+** of an atom without needing to verify using isatom.
 **
-** Both vectors and tables use the same dynamic array object under the hood.
-**
-** Syntax functions (ex. quote, lambda) accept a lexical environment as a
-** second argument. The arguments list passed to syntax functions is also
-** passed unevaluated.
+** Both vectors and tables use the same vector object to store values.
 */
 #ifndef OBJECT_H
 #define OBJECT_H
@@ -27,48 +24,24 @@
 
 typedef struct Vector Vector;
 
-// typedef struct Port {
-//   enum {
-//     P_FREE = 0,
-//     P_FILE = 1,
-//     P_BUFFER = 2,
-//     P_READ = 4,
-//     P_WRITE = 8,
-//     P_EOF = 16,
-//   } _type;
-//   union {
-//     struct {
-//       FILE *stream;
-//       char *name;
-//     } file;
-//     struct {
-//       char *base;
-//       char *ptr;
-//       char *end;
-//     } buffer;
-//   } _as;
-// } Port;
-
-typedef struct List {
-  Object *_car;
-  Object *_cdr;
-} List;
-
-enum {
-  T_NIL       = 1,
-  T_INTEGER   = 3,
-  T_REAL      = 5,
-  T_CHARACTER = 7,
-  T_STRING    = 9,
-  T_FFUNCTION = 11,
-  T_VECTOR    = 13,
-  T_TABLE     = 15,
-  T_PORT      = 17,
-  T_FWD       = 19
-};
-
-typedef struct Atom {
-  uintptr_t type;  // _car-aligned
+struct Object {
+  union {
+    enum {  // Atom types (must be odd-numbered)
+      T_NIL       = 1,
+      T_INTEGER   = 3,
+      T_REAL      = 5,
+      T_BOOLEAN   = 7,
+      T_CHARACTER = 9,
+      T_STRING    = 11,
+      T_SYMBOL    = 13,
+      T_FFUNCTION = 15,
+      T_VECTOR    = 17,
+      T_TABLE     = 19,
+      T_PORT      = 21,
+      T_FWD       = 23  // forward heap reference
+    } _tt;
+    Object *_car;
+  } _fst;
   union {
     int32_t integer;
     float real;
@@ -77,15 +50,8 @@ typedef struct Atom {
     FFunction *ffunction;
     Vector *vector;
     FILE *port;
-    Object *fwd;
-  } as;
-} Atom;
-
-// C99 - section 6.7.2.1, paragraph 14: A pointer to a union object, suitably
-// converted, points to each of its members [...], and vice versa.
-union Object {
-  Atom atom;
-  List list;
+    Object *fwd;  // also stores cdr address
+  } _snd;
 } __attribute__((aligned(8)));
 
 struct Vector {
@@ -94,14 +60,14 @@ struct Vector {
 };
 
 // Is the first bit set?
-#define isfbs(x) (((x)->atom.type) & 0x1)
-
-#define isatom(x) (isfbs(x) == 0x1)
-#define type(x) (((Atom *)(x))->type)
-#define as(x)   (((Atom *)(x))->as)
+#define isfbs(x) ((x)->_fst._tt & 0x1)
 
 #define islist(x) (isfbs(x) == 0x0)
-#define car(x) (((List *)(x))->_car)
-#define cdr(x) (((List *)(x))->_cdr)
+#define car(x) ((x)->_fst._car)
+#define cdr(x) ((x)->_snd.fwd)
+
+#define isatom(x) (isfbs(x) == 0x1)
+#define type(x) ((x)->_fst._tt)
+#define as(x)   ((x)->_snd)
 
 #endif

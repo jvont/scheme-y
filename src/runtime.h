@@ -27,11 +27,9 @@
 
 enum {
   E_OK,
-  E_EOF,
-  E_TOKEN,
-  E_DOTSEP,
-  E_RANGE,
-  E_PARSE
+  E_SYNTAX,  // syntax error
+  E_RUNTIME,  // runtime error
+  E_MEMORY  // out of memory, called on exit
 };
 
 typedef struct Reader {
@@ -41,9 +39,6 @@ typedef struct Reader {
   int ch;  // next character
   size_t depth, lineno;  // read position
   int prompt;  // interactive prompt?
-
-  int err;  // error status
-
   SyState *s;  // associated state
 } Reader;
 

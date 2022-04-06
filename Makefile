@@ -6,10 +6,10 @@ SRCS := $(wildcard src/*.c)
 OBJS := $(SRCS:%.c=%.o)
 TESTS := $(wildcard tests/*.c)
 
-.PHONY: rebuild all tests clean
+.PHONY: build rebuild tests clean
 
-rebuild: clean bin/scheme-y # all
-all: bin/scheme-y tests
+build: bin/scheme-y
+rebuild: clean bin/scheme-y
 
 bin/scheme-y: $(OBJS) | bin
 	gcc $^ -o $@ $(LDFLAGS)
@@ -17,7 +17,7 @@ bin/scheme-y: $(OBJS) | bin
 tests: $(TESTS:tests/%.c=bin/%)
 	for f in $^; do ./$$f; done
 
-bin/%: tests/%.o $(filter-out %scheme-y.o, $(OBJS)) | bin
+bin/%: tests/%.o $(filter-out %main.o, $(OBJS)) | bin
 	gcc $^ -o $@
 
 %.o: %.c

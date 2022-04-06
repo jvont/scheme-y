@@ -8,35 +8,42 @@
 #include <stdint.h>
 #include <stdio.h>
 
-// Read buffer size
+// Default read buffer size
 #define BUFFER_SIZE 1024
 
 // Interpreter state
 typedef struct SyState SyState;
 
 // Scheme object
-typedef union Object Object;
+typedef struct Object Object;
 
-// Foreign function
+// Foreign C function
 typedef int *(FFunction)(SyState *);
 
-SyState *Sy_open();
-void Sy_close(SyState *s);
+// Create new interpreter state
+SyState *sy_open();
+void sy_close(SyState *s);
 
-void Sy_pushlist(SyState *s, Object *ca, Object *cd);
-void Sy_pushnil(SyState *s);
-void Sy_pushinteger(SyState *s, int32_t i);
-void Sy_pushreal(SyState *s, float r);
-void Sy_pushcharacter(SyState *s, uint32_t ch);
-void Sy_pushstring(SyState *s, const char *str);
-void Sy_pushnstring(SyState *s, const char *str, size_t n);
-void Sy_pushffunction(SyState *s, FFunction *f);
-void Sy_pushvector(SyState *s, size_t size);
-void Sy_pushport(SyState *s, FILE *p);
+// C Stack API
+void sy_pushlist(SyState *s, Object *ca, Object *cd);
+void sy_pushnil(SyState *s);
+void sy_pushinteger(SyState *s, int32_t i);
+void sy_pushreal(SyState *s, float r);
+void sy_pushboolean(SyState *s, int b);
+void sy_pushcharacter(SyState *s, uint32_t ch);
+void sy_pushstring(SyState *s, const char *str);
+void sy_pushnstring(SyState *s, const char *str, size_t n);
+void sy_pushffunction(SyState *s, FFunction *f);
+void sy_pushvector(SyState *s, size_t size);
+void sy_pushport(SyState *s, FILE *p);
+
+// void sy_error(SyState *s, const char *msg);
+
+void sy_intern(SyState *s, const char *sym);
+void sy_nintern(SyState *s, const char *sym, size_t n);
 
 // TEMP
 extern int read_read(SyState *s);
 
-// void Sy_load();
 
 #endif

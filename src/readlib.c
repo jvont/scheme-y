@@ -64,9 +64,9 @@ static void save(Reader *r, int c) {
 // ---------------------------------------------------------------------------
 
 // Scan an invalid token until next delimiter.
-static int read_invalid(Reader *r) {
+static int read_error(Reader *r) {
   save_until(r, isdelim);
-  return E_TOKEN;
+  return E_SYNTAX;
 }
 
 // Number = integer | real ;
@@ -79,12 +79,22 @@ static int read_number(Reader *r) {
   if (errno == ERANGE || *endptr != '\0') {
     float real = strtof(nptr, &endptr);
     if (errno == ERANGE || *endptr != '\0') {  // ERROR: number too large
-      read_invalid(r);
-      return E_PARSE;
+      return read_error(r);
     }
-    else Sy_pushreal(r->s, real);
+    else sy_pushreal(r->s, real);
   }
-  else Sy_pushinteger(r->s, integer);
+  else sy_pushinteger(r->s, integer);
+  return E_OK;
+}
+
+// Boolean = #t | #f ;
+static int read_boolean(Reader *r) {
+  int b = (r->ch == 't');
+  next(r);
+  if (!isdelim(r->ch))
+    return read_error(r);
+  
+  sy_pushboolean(r->s, b);
   return E_OK;
 }
 
@@ -95,12 +105,12 @@ static int read_string(Reader *r) {
     if (r->ch == '\\')  // string escape
       save_next(r);
     else if (r->ch == EOF)  // unexpected EOF
-      return E_EOF;
+      return read_error(r);
     save_next(r);
   }
   save(r, '\0');
   next(r);
-  Sy_pushstring(r->s, r->buffer);
+  sy_pushstring(r->s, r->buffer);
   return E_OK;
 }
 
@@ -112,10 +122,10 @@ static int read_identifier(Reader *r) {
   }
   save(r, '\0');
   if (!isdelim(r->ch))
-    return E_TOKEN;
+    return read_error(r);
 
-  Sy_pushstring(r->s, r->buffer);
-  // Sy_intern(r->s, r->buffer);
+  sy_pushstring(r->s, r->buffer);
+  // sy_pushsymbol(r->s, r->buffer);
   return E_OK;
 }
 
@@ -123,11 +133,12 @@ static int read_expr(Reader *r);
 
 #include "heap.h"
 
-int Sy_cons(SyState *s) {
+int sy_cons(SyState *s) {
   Object *x = SyState_push(s);
   
   // TODO: proper handling of nil
 
+  // Move car to heap
   if (type(&s->stack[s->top - 3]) == T_NIL)
     car(x) = NULL;
   else {
@@ -135,6 +146,7 @@ int Sy_cons(SyState *s) {
     *car(x) = s->stack[s->top - 3];
   }
 
+  // Move cdr to heap
   if (type(&s->stack[s->top - 2]) == T_NIL)
     cdr(x) = NULL;
   else {
@@ -142,6 +154,7 @@ int Sy_cons(SyState *s) {
     *cdr(x) = s->stack[s->top - 2];
   }
 
+  // Move 
   s->stack[s->top - 3] = *x;
   s->top -= 2;
 }
@@ -149,21 +162,27 @@ int Sy_cons(SyState *s) {
 // Parse a list expression.
 static int read_list(Reader *r) {
   skip_while(r, isspace);  // skip whitespace
+
   if (r->ch == ')') {
     r->depth--;
     next(r);
-    Sy_pushnil(r->s);
+    sy_pushnil(r->s);
     return E_OK;
   }
-  // int dotsep = (r->ch == '.');
+  int dotsep = (r->ch == '.');
 
-  read_expr(r);
-  read_list(r);
-  Sy_cons(r->s);
+  int err;
+  if ((err = read_expr(r)) || (err = read_list(r)))
+    return err;
 
-  // if (dotsep && rest)
-  //   r->error = E_DOTSEP;
-  // return dotsep ? obj : cons(obj, rest);
+  if (dotsep) {
+    if (type(&r->s->stack[r->s->top - 1]) != T_NIL)
+      return read_error(r);
+
+    SyState_pop(r->s);  // remove nil
+  }
+  else sy_cons(r->s);
+
   return E_OK;
 }
 
@@ -192,7 +211,7 @@ static int read_expr(Reader *r) {
     case '.':
       save_next(r);
       if (isdelim(r->ch))  // dot separator (if list)
-        return (r->depth) ? read_expr(r) : read_invalid(r);
+        return (r->depth) ? read_expr(r) : read_error(r);
       else if (isinitial(r->ch) || r->ch == '.')  // .. { subseq }
         return read_identifier(r);
       else if (isdigit(r->ch))  // . { digit }
@@ -202,61 +221,47 @@ static int read_expr(Reader *r) {
       return read_string(r);  // " { char | esc } "
     // case '\'':
     //   next(r);
-    //   return cons(sy_intern(r->s, "quote"), cons(read_expr(r), NULL));
+    //   sy_intern(r->s, "quote", );
+    //   read_expr(r);
     // case '`':
     //   next(r);
-    //   return cons(sy_intern(r->s, "quasiquote"), cons(read_expr(r), NULL));
+    //   sy_intern(r->s, "quasiquote");
+    //   read_expr(r);
     // case ',':
     //   next(r);
     //   if (r->ch == '@') {
     //     next(r);
-    //     return cons(sy_intern(r->s, "unquote-splicing"), cons(read_expr(r), NULL));
+    //     sy_intern(r->s, "unquote-splicing");
+    //     read_expr(r);
     //   }
-    //   else return cons(sy_intern(r->s, "unquote"), cons(read_expr(r), NULL));
-    case '#':
-      next(r);
-      switch (r->ch) {
-        // case 't':
-        //   next(r);
-        //   return sy_intern(r->s, "#t");
-        // case 'f':
-        //   next(r);
-        //   return sy_intern(r->s, "#f");
-        case '|':  // block comment #| ... |#
-        case '\\':  // character literal (handle special cases)
-        case '(':  // vector literal
-        case 'e': case 'i': case 'o': case 'd': case 'x':  // number literal
-        case 'u':  // bytevector constant, #u8(
-        default:  // datum label, #<digits>= #<digits>#
-          break;
-      }
-      break;
-    // case EOF:
-    //   return sy_intern(r->s, "#!eof");
+    //   sy_intern(r->s, "unquote");
+    //   read_expr(r);
+    // case '#':
+    //   next(r);
+    //   switch (r->ch) {
+    //     case 't': case 'f':
+    //       return read_boolean(r);
+    //     case '|':  // block comment #| ... |#
+    //     case '\\':  // character literal (handle special cases)
+    //     case '(':  // vector literal
+    //     case 'e': case 'i': case 'o': case 'd': case 'x':  // number literal
+    //     case 'u':  // bytevector constant, #u8(
+    //     default:  // datum label, #<digits>= #<digits>#
+    //       break;
+    //   }
     default:
       break;
   }
-  return read_invalid(r);
+  return read_error(r);
 }
 
 // ---------------------------------------------------------------------------
 // Read builtin
 // ---------------------------------------------------------------------------
 
-// uses the C API
-// list parsing
-//   push all elements onto the stack
-//   cons one-by-one
-// 
-// ex. (1 2 3)
-//   [1 2 3 '()]
-//   [1 2 (cons 3 '())]
-//   [1 (cons 2 (cons 3 '()))]
-//   [(cons 1 (cons 2 (cons 3 '())))]
-
 int read_read(SyState *s) {
   Reader *r = &s->r;
-  r->port = DEFAULT_INPUT_PORT;  // TODO: check top of stack for port
+  r->port = DEFAULT_INPUT_PORT;  // TODO: check top of stack for port argument
   if (!r->buffer) {
     r->buffer = malloc(BUFFER_SIZE);
     r->size = BUFFER_SIZE;
@@ -269,6 +274,10 @@ int read_read(SyState *s) {
   r->s = s;
 
   next(r);
+  // skip_while(r, isspace);
+  // if (r->ch == EOF)
+  //   return sy_intern(s, "#!eof");
+
   return read_expr(r);
 }
 
