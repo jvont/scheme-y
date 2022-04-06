@@ -121,31 +121,45 @@ static int read_identifier(Reader *r) {
 
 static int read_expr(Reader *r);
 
+#include "heap.h"
+
+int Sy_cons(SyState *s) {
+  Object *x = SyState_push(s);
+  
+  // TODO: proper handling of nil
+
+  if (type(&s->stack[s->top - 3]) == T_NIL)
+    car(x) = NULL;
+  else {
+    car(x) = Heap_object(s->h);
+    *car(x) = s->stack[s->top - 3];
+  }
+
+  if (type(&s->stack[s->top - 2]) == T_NIL)
+    cdr(x) = NULL;
+  else {
+    cdr(x) = Heap_object(s->h);
+    *cdr(x) = s->stack[s->top - 2];
+  }
+
+  s->stack[s->top - 3] = *x;
+  s->top -= 2;
+}
+
 // Parse a list expression.
 static int read_list(Reader *r) {
   skip_while(r, isspace);  // skip whitespace
   if (r->ch == ')') {
     r->depth--;
     next(r);
+    Sy_pushnil(r->s);
     return E_OK;
   }
   // int dotsep = (r->ch == '.');
 
-  while (r->ch != ')') {
-
-    // TODO: API methods for creating lists (cons)
-
-    Sy_pushlist(r->s, NULL, NULL);
-    
-    Object *cons = &r->s->stack[r->s->top - 1];
-
-    int err = read_expr(r);
-
-    // Object *val = Sy_pop()
-
-  }
-
+  read_expr(r);
   read_list(r);
+  Sy_cons(r->s);
 
   // if (dotsep && rest)
   //   r->error = E_DOTSEP;
@@ -228,6 +242,17 @@ static int read_expr(Reader *r) {
 // ---------------------------------------------------------------------------
 // Read builtin
 // ---------------------------------------------------------------------------
+
+// uses the C API
+// list parsing
+//   push all elements onto the stack
+//   cons one-by-one
+// 
+// ex. (1 2 3)
+//   [1 2 3 '()]
+//   [1 2 (cons 3 '())]
+//   [1 (cons 2 (cons 3 '()))]
+//   [(cons 1 (cons 2 (cons 3 '())))]
 
 int read_read(SyState *s) {
   Reader *r = &s->r;

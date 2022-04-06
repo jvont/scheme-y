@@ -55,15 +55,16 @@ typedef struct List {
 } List;
 
 enum {
-  T_INTEGER = 1,
-  T_REAL = 3,
-  T_CHARACTER = 5,
-  T_STRING = 7,
-  T_FFUNCTION = 9,
-  T_VECTOR = 11,
-  T_TABLE = 13,
-  T_PORT = 15,
-  T_FWD = 17
+  T_NIL       = 1,
+  T_INTEGER   = 3,
+  T_REAL      = 5,
+  T_CHARACTER = 7,
+  T_STRING    = 9,
+  T_FFUNCTION = 11,
+  T_VECTOR    = 13,
+  T_TABLE     = 15,
+  T_PORT      = 17,
+  T_FWD       = 19
 };
 
 typedef struct Atom {

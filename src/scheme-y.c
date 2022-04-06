@@ -21,6 +21,12 @@ void Sy_close(SyState *s) {
   SyState_free(s);
 }
 
+void Sy_pushnil(SyState *s) {
+  Object *x = SyState_push(s);
+  type(x) = T_NIL;
+  as(x).integer = 0;
+}
+
 void Sy_pushlist(SyState *s, Object *ca, Object *cd) {
   Object *x = SyState_push(s);
   car(x) = ca;
@@ -87,7 +93,7 @@ void Sy_pushport(SyState *s, FILE *p) {
 int main(int argc, char **argv) {
   SyState *s = Sy_open();
 
-  
+  int err = read_read(s);
 
   Sy_close(s);
 
