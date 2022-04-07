@@ -1,16 +1,5 @@
 /*
 ** Interpreter state.
-**
-** Each thread state object stores environment frames, a run queue (code), and
-** evaluation stack. Each of these structures are added as roots to the
-** managed heap. The goal of this layout is to facilitate concurrent execution
-** in the future.
-**
-** Environments are pairs, where car points to current bindings and cdr points
-** to the next environment pair to search for a specific interned symbol. The
-** current environment is added as a root for collection. The top-level
-** environment (env_tail) is implemented as a hash table and shared between
-** threads.
 */
 #ifndef STATE_H
 #define STATE_H

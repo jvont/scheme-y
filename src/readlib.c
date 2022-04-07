@@ -3,8 +3,6 @@
 
 #include <ctype.h>
 #include <errno.h>
-#include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -12,12 +10,12 @@
 // Scanning utilities
 // ---------------------------------------------------------------------------
 
-static int isdelim(int c) { return isspace(c) || c == '(' || c == ')' || c == ';'; }
+static int isdelim(int c) { return isspace(c) || c == '(' || c == ')' || c == ';' || c == EOF; }
 static int isinitial(int c) { return isalpha(c) || strchr("!$%&*/:<=>?@^_~", c); }
 static int issubseq(int c) { return isalnum(c) || strchr("!$%&*/:<=>?@^_~+-.", c); }
 
 #define save_until(r,pred) while (!pred(r->ch)) { save_next(r); } save(r, '\0')
-#define skip_while(r,pred) while (pred(r->ch)) next(r)
+#define skip_while(r,pred) while (pred(r->ch)) { next(r); }
 #define save_next(r) (save(r, r->ch), next(r))
 
 // Get user input, printing prompt to stdout.
@@ -65,6 +63,10 @@ static void save(Reader *r, int c) {
 
 // Scan an invalid token until next delimiter.
 static int read_error(Reader *r) {
+  int eeof = (r->ch == EOF);
+
+  // sy_pushstring(r->s, "syntax error");
+
   save_until(r, isdelim);
   return E_SYNTAX;
 }
@@ -258,6 +260,8 @@ static int read_expr(Reader *r) {
 // ---------------------------------------------------------------------------
 // Read builtin
 // ---------------------------------------------------------------------------
+
+// TODO: push closurewhen calling
 
 int read_read(SyState *s) {
   Reader *r = &s->r;
