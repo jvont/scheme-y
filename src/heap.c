@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Convert size in bytes to size in objects, rounded up
+#define objsize(n) ((n + sizeof(Object) - 1) / sizeof(Object))
+
 // Chunks are a singly-linked list of heap memory. Each time memory is
 // requested, the next available space in the list head is used. If there
 // is not enough space for the memory requested, a new chunk is pushed onto

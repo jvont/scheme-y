@@ -6,10 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// ---------------------------------------------------------------------------
-// Scanning utilities
-// ---------------------------------------------------------------------------
-
 static int isdelim(int c) { return isspace(c) || c == '(' || c == ')' || c == ';' || c == EOF; }
 static int isinitial(int c) { return isalpha(c) || strchr("!$%&*/:<=>?@^_~", c); }
 static int issubseq(int c) { return isalnum(c) || strchr("!$%&*/:<=>?@^_~+-.", c); }
@@ -56,10 +52,6 @@ static void save(Reader *r, int c) {
   }
   r->buffer[r->pos++] = c;
 }
-
-// ---------------------------------------------------------------------------
-// Reader functions
-// ---------------------------------------------------------------------------
 
 // Scan an invalid token until next delimiter.
 static int read_error(Reader *r) {
@@ -256,10 +248,6 @@ static int read_expr(Reader *r) {
   }
   return read_error(r);
 }
-
-// ---------------------------------------------------------------------------
-// Read builtin
-// ---------------------------------------------------------------------------
 
 // TODO: push closurewhen calling
 

@@ -58,7 +58,7 @@ static void write_obj(Object *obj, FILE *stream) {
     case T_SYMBOL:
       fprintf(stream, "%s", as(obj).string);
       break;
-    case T_FFUNCTION:
+    case T_CCLOSURE:
       fprintf(stream, "<foreign-func>");
       break;
     case T_VECTOR:

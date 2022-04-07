@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stddef.h>
 
+typedef struct Object Object;
 typedef struct Vector Vector;
 
 struct Object {
@@ -34,11 +35,12 @@ struct Object {
       T_CHARACTER = 9,
       T_STRING    = 11,
       T_SYMBOL    = 13,
-      T_FFUNCTION = 15,
-      T_VECTOR    = 17,
-      T_TABLE     = 19,
-      T_PORT      = 21,
-      T_FWD       = 23  // forward heap reference
+      T_CCLOSURE  = 15,
+      T_SCLOSURE  = 17,
+      T_VECTOR    = 19,
+      T_TABLE     = 21,
+      T_PORT      = 23,
+      T_FWD       = 25  // forward heap reference
     } _tt;
     Object *_car;
   } _fst;
@@ -47,7 +49,7 @@ struct Object {
     float real;
     uint32_t character;
     char *string;
-    FFunction *ffunction;
+    SyFunction *ffunction;
     Vector *vector;
     FILE *port;
     Object *fwd;  // also stores cdr address

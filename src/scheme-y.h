@@ -1,5 +1,5 @@
 /*
-** Scheme-Y API and REPL entry point.
+** Scheme-y C API.
 */
 #ifndef SCHEME_Y_H
 #define SCHEME_Y_H
@@ -14,18 +14,14 @@
 // Interpreter state
 typedef struct SyState SyState;
 
-// Scheme object
-typedef struct Object Object;
-
-// Foreign C function
-typedef int *(FFunction)(SyState *);
-
-// Create new interpreter state
 SyState *sy_open();
 void sy_close(SyState *s);
 
+// C function
+typedef int *(SyFunction)(SyState *);
+
 // C Stack API
-void sy_pushlist(SyState *s, Object *ca, Object *cd);
+void sy_pushlist(SyState *s);
 void sy_pushnil(SyState *s);
 void sy_pushinteger(SyState *s, int32_t i);
 void sy_pushreal(SyState *s, float r);
@@ -33,7 +29,7 @@ void sy_pushboolean(SyState *s, int b);
 void sy_pushcharacter(SyState *s, uint32_t ch);
 void sy_pushstring(SyState *s, const char *str);
 void sy_pushnstring(SyState *s, const char *str, size_t n);
-void sy_pushffunction(SyState *s, FFunction *f);
+void sy_pushffunction(SyState *s, SyFunction *f);
 void sy_pushvector(SyState *s, size_t size);
 void sy_pushport(SyState *s, FILE *p);
 

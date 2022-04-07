@@ -14,9 +14,6 @@ SyState *sy_open() {
 }
 
 void sy_close(SyState *s) {
-  Heap_free(s->h);
-
-  free(s->buffer);
 
   SyState_free(s);
 }
@@ -27,10 +24,10 @@ void sy_pushnil(SyState *s) {
   as(x).integer = 0;
 }
 
-void sy_pushlist(SyState *s, Object *ca, Object *cd) {
+void sy_pushlist(SyState *s) {
   Object *x = SyState_push(s);
-  car(x) = ca;
-  cdr(x) = cd;
+  car(x) = NULL;
+  cdr(x) = NULL;
 }
 
 void sy_pushinteger(SyState *s, int32_t i) {
@@ -73,9 +70,9 @@ void sy_pushnstring(SyState *s, const char *str, size_t n) {
   as(x).string = dest;
 }
 
-void sy_pushffunction(SyState *s, FFunction *f) {
+void sy_pushffunction(SyState *s, SyFunction *f) {
   Object *x = SyState_push(s);
-  type(x) = T_FFUNCTION;
+  type(x) = T_CCLOSURE;
   as(x).ffunction = f;
 }
 

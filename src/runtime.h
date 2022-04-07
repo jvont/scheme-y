@@ -14,6 +14,7 @@
 #define DEFAULT_INPUT_PORT stdin
 #define DEFAULT_OUTPUT_PORT stdout
 
+// Scheme-y error codes.
 enum {
   E_OK,
   E_SYNTAX,  // syntax error
@@ -21,6 +22,7 @@ enum {
   E_MEMORY  // out of memory, called on exit
 };
 
+// Scheme object parser. Used for reading from streams.
 typedef struct Reader {
   FILE *port;  // current input port
   char *buffer;  // token buffer
@@ -31,15 +33,15 @@ typedef struct Reader {
   SyState *s;  // associated state
 } Reader;
 
+// Scheme-y interpreter state.
 struct SyState {
   Object *stack;
   size_t top, stack_size;
 
+  Object *globals;  // hash table of top-level bindings
+  size_t globals_size;
+
   Reader r;
-
-  char *buffer;  // read buffer
-  int prompt;  // interactive prompt?
-
   int err;  // error status
   struct Heap *h;
 };
