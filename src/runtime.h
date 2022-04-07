@@ -39,7 +39,7 @@ struct SyState {
   size_t top, stack_size;
 
   Object *globals;  // hash table of top-level bindings
-  size_t globals_size;
+  size_t globals_count, globals_size;
 
   Reader r;
   int err;  // error status
@@ -47,15 +47,16 @@ struct SyState {
 };
 
 SyState *SyState_new();
-void SyState_free(SyState *s);
+void     SyState_free(SyState *s);
 
-Object *SyState_push(SyState *s);
-void SyState_pop(SyState *s);
+Object  *SyState_push(SyState *s);
+void     SyState_pop(SyState *s);
 
-// void SyState_run(SyState *s);
+Object  *SyState_intern(SyState *s, const char *sym);
+Object  *SyState_lookup(SyState *s, Object *sym);
+int      SyState_bind(SyState *s, Object *sym, Object *val);
+void     SyState_intern_bind(SyState *s, const char *sym, Object *val);
 
-// Object *lookup(Object *env);
-// Object *bind(Object *env, Object *var, Object *val);
-// Object *intern(Object *env, const char *s);
+// void     SyState_run(SyState *s);
 
 #endif

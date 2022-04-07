@@ -32,3 +32,13 @@ void *err_realloc(void *ptr, size_t size) {
   }
   return p;
 }
+
+/* djb2 hash: http://www.cse.yorku.ca/~oz/hash.html */
+unsigned long hash(const char *s) {
+  unsigned long h = 5381;
+  while (*s) {
+    /* h = h * 33 ^ c */
+    h = ((h << 5) + h) ^ *s++;
+  }
+  return h;
+}

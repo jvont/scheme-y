@@ -215,7 +215,7 @@ static int read_expr(Reader *r) {
       return read_string(r);  // " { char | esc } "
     // case '\'':
     //   next(r);
-    //   sy_intern(r->s, "quote", );
+    //   sy_intern(r->s, "quote");
     //   read_expr(r);
     // case '`':
     //   next(r);

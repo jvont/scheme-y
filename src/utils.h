@@ -13,4 +13,6 @@ void *err_malloc(size_t size);
 void *err_calloc(size_t n, size_t size);
 void *err_realloc(void *ptr, size_t size);
 
+unsigned long hash(const char *s);
+
 #endif
