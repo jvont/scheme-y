@@ -6,10 +6,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-// ---------------------------------------------------------------------------
-// Chunk utilities
-// ---------------------------------------------------------------------------
-
+// Chunks are a singly-linked list of heap memory. Each time memory is
+// requested, the next available space in the list head is used. If there
+// is not enough space for the memory requested, a new chunk is pushed onto
+// the head of the list.
+// On collection, the list of chunks is amalgamated into a single chunk with
+// size based on current heap size.
 typedef struct Chunk {
   void *blocks, *alloc;
   void *mark;  // previous collection end point
@@ -84,10 +86,10 @@ int Chunk_marked(Chunk *c, void *p) {
   return 0;
 }
 
-// ---------------------------------------------------------------------------
-// Generation utilities
-// ---------------------------------------------------------------------------
-
+// Generation store two separate singly-linked lists of chunks. The obj list
+// stores allocated objects, while the data list stores any managed
+// references (strings, vectors, etc.). On collection, obj is scanned using
+// breadth-first search.
 typedef struct Generation {
   Chunk *obj;  // scanned objects
   Chunk *data;  // general-purpose memory (malloc)
@@ -114,11 +116,10 @@ static size_t Generation_size(Generation *g) {
   return Chunk_size(g->obj) + Chunk_size(g->data);
 }
 
-// ---------------------------------------------------------------------------
-// Heap definitions
-// ---------------------------------------------------------------------------
-
-
+// The heap stores a young (g0), old (g1), and transitory (swap) generation.
+// full sweeps occur at fixed intervals, while objects from the young
+// generation are promoted to the old generation whenever they survive two
+// collections.
 struct Heap {
   Generation *g0, *g1, *swap;
   SyState *s;  // roots
@@ -303,7 +304,7 @@ void Heap_collect(Heap *h) {
   h->g0 = h->swap;
   h->swap = swap;
 
-  // TODO: collect old generation (full sweep) 
+  // TODO: collecting old generation (full sweep) 
   
   // set scan/alloc pointers
   Chunk *c0 = h->g0->obj;
