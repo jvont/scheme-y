@@ -20,7 +20,13 @@ void sy_close(SyState *s);
 // C function
 typedef int *(SyFunction)(SyState *);
 
-// C Stack API
+// Stack API
+int sy_gettop(SyState *s);
+void sy_settop(SyState *s, int idx);
+void sy_pushval(SyState *s, int idx);
+
+#define sy_pop(s,n) sy_settop(s, -(n)-1)
+
 void sy_pushlist(SyState *s);
 void sy_pushnil(SyState *s);
 void sy_pushinteger(SyState *s, int32_t i);
