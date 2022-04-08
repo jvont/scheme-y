@@ -5,8 +5,8 @@
 
 - bytecode interpreter
 
-- global registry
+- global registry (table)
 - register ffunctions (library)
 
-- heap intern strings
+- heap intern C strings
 - parser (read) builtin

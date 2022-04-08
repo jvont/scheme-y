@@ -249,10 +249,7 @@ static int read_expr(Reader *r) {
   return read_error(r);
 }
 
-// TODO: push closurewhen calling
-
-int read_read(SyState *s) {
-  Reader *r = &s->r;
+void init_reader(Reader *r) {
   r->port = DEFAULT_INPUT_PORT;  // TODO: check top of stack for port argument
   if (!r->buffer) {
     r->buffer = malloc(BUFFER_SIZE);
@@ -263,14 +260,22 @@ int read_read(SyState *s) {
   r->depth = 0;
   r->lineno = 1;
   r->prompt = (r->port == stdin);
-  r->s = s;
+}
 
-  next(r);
+// TODO: push closurewhen calling
+
+int read_read(SyState *s) {
+  Reader *r = &s->r;
+  init_reader(r);
+  r->s = s;
+  next(&s->r);
   // skip_while(r, isspace);
   // if (r->ch == EOF)
   //   return sy_intern(s, "#!eof");
 
-  return read_expr(r);
+  return read_expr(&s->r);
 }
+
+// TODO: function to parse entire file
 
 // TODO: register read function

@@ -1,3 +1,4 @@
+CC = gcc
 CFLAGS = -ansi -Wpedantic -std=c99 -g
 # CFLAGS += -Wall -Wextra
 LDFLAGS = -lm
@@ -13,7 +14,7 @@ rebuild: clean build
 build: bin/scheme-y
 
 bin/scheme-y: $(OBJS) | bin
-	gcc $^ -o $@ $(LDFLAGS)
+	$(CC) $^ -o $@ $(LDFLAGS)
 
 tests: $(TESTS:tests/%.c=bin/%)
 	@for f in $^ ; do ./$$f ; done
@@ -21,10 +22,10 @@ tests: $(TESTS:tests/%.c=bin/%)
 # keep intermediate tests/%.o files
 .SECONDARY: $(TESTS:.c=.o)
 bin/%: tests/%.o $(filter-out %main.o, $(OBJS)) | bin
-	gcc $^ -o $@ $(LDFLAGS)
+	$(CC) $^ -o $@ $(LDFLAGS)
 
 %.d: %.c
-	gcc -MM $^ -MF $@
+	$(CC) -MM $^ -MF $@
 
 bin:
 	mkdir -p $@
