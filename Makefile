@@ -5,21 +5,27 @@ LDFLAGS = -lm
 
 SRCS := $(wildcard src/*.c)
 OBJS := $(SRCS:.c=.o)
-TESTS := $(wildcard tests/*.c)
-DEPENDS := $(OBJS:.o=.d) $(TESTS:.c=.d)
+TARGET := bin/scheme-y
+
+TSRCS := $(wildcard tests/*.c)
+TOBJS := $(TSRCS:.c=.o) $(filter-out %main.o,$(OBJS))
+TESTS := $(TSRCS:tests/%.c=bin/%)
+
+DEPENDS := $(SRCS:.c=.d) $(TSRCS:.c=.d)
 
 .PHONY: all build rebuild tests clean
-all: bin/scheme-y tests
-build: bin/scheme-y
-rebuild: clean bin/scheme-y
 
-tests: $(TESTS:tests/%.c=bin/%)
-	@for f in $^; do ./$$f; done
+all: $(TARGET) tests
+build: $(TARGET)
+rebuild: clean $(TARGET)
 
-bin/%: tests/%.o $(filter-out %main.o,$(OBJS)) | bin
+$(TARGET): $(OBJS) | bin
 	gcc $^ -o $@ $(LDFLAGS)
 
-bin/scheme-y: $(OBJS) | bin
+tests: $(TESTS)
+	@for f in $^; do ./$$f; done
+
+$(TESTS): $(TOBJS) | bin
 	gcc $^ -o $@ $(LDFLAGS)
 
 %.d: %.c
