@@ -8,9 +8,9 @@ TESTS := $(wildcard tests/*.c)
 
 .PHONY: all build rebuild tests clean
 
-all: bin/scheme-y tests
+all: build tests
+rebuild: clean build
 build: bin/scheme-y
-rebuild: clean bin/scheme-y
 
 bin/scheme-y: $(OBJS) | bin
 	gcc $^ -o $@ $(LDFLAGS)
