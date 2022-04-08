@@ -1,21 +1,23 @@
-CC = gcc
+CC := gcc
 CFLAGS = -ansi -Wpedantic -std=c99 -g
 # CFLAGS += -Wall -Wextra
 LDFLAGS = -lm
 
 SRCS := $(wildcard src/*.c)
 OBJS := $(SRCS:.c=.o)
-DEPS := $(OBJS:.o=.d)
-
 TESTS := $(wildcard tests/*.c)
-TEST_OBJS := $(TESTS:.c=.o)
-TEST_DEPS := $(TESTS:.o=.d)
-# TEST_EXES := $(TESTS:tests/%.c=bin/%.c)
+DEPENDS := $(OBJS:.o=.d) $(TESTS:.c=.d)
 
-# tests: $(TEST_EXES)
+.PHONY: all build rebuild tests clean
+all: bin/scheme-y tests
+build: bin/scheme-y
+rebuild: clean bin/scheme-y
 
-# bin/%: tests/%.o $(TEST_OBJS) $(filter-out %main.o, $(OBJS)) bin
-# 	gcc $^ -o $@ $(LDFLAGS)
+tests: $(TESTS:tests/%.c=bin/%)
+	@for f in $^; do ./$$f; done
+
+bin/%: tests/%.o $(filter-out %main.o,$(OBJS)) | bin
+	gcc $^ -o $@ $(LDFLAGS)
 
 bin/scheme-y: $(OBJS) | bin
 	gcc $^ -o $@ $(LDFLAGS)
@@ -23,7 +25,7 @@ bin/scheme-y: $(OBJS) | bin
 %.d: %.c
 	$(CC) -MM $^ -MF $@
 
-bin obj:
+bin:
 	@mkdir -p $@
 
 clean:
@@ -31,39 +33,6 @@ clean:
 	@rm -f src/*.o src/*.d
 	@rm -f test/*.o test/*.d
 
--include $(DEPS)
-
-# -include $(TEST_DEPS)
-
-# CFLAGS = -ansi -Wpedantic -std=c99 -g
-# # CFLAGS += -Wall -Wextra
-# LDFLAGS = -lm
-
-# SRCS := $(wildcard src/*.c)
-# OBJS := $(SRCS:%.c=%.o)
-# TESTS := $(wildcard tests/*.c)
-
-# .PHONY: build rebuild tests clean
-
-# build: bin/scheme-y
-# rebuild: clean bin/scheme-y
-
-# bin/scheme-y: $(OBJS) | bin
-# 	gcc $^ -o $@ $(LDFLAGS)
-
-# tests: $(TESTS:tests/%.c=bin/%)
-# 	for f in $^; do ./$$f; done
-
-# bin/%: tests/%.o $(filter-out %main.o, $(OBJS)) | bin
-# 	gcc $^ -o $@
-
-# %.o: %.c
-# 	gcc -c $(CFLAGS) $< -o $@
-
-# bin:
-# 	mkdir -p $@
-
-# clean:
-# 	rm -rf bin
-# 	rm -f src/*.o
-# 	rm -f tests/*.o
+ifneq ($(MAKECMDGOALS), clean)
+-include $(DEPENDS)
+endif
