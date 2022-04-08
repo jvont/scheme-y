@@ -101,7 +101,7 @@ int main() {
   s = malloc(sizeof(SyState));
   s->top = 0;
 
-  run_tests(table, "test heap.h functions");
+  run_tests(table, "managed heap functions");
 
   free(s);
   return 0;

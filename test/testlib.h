@@ -15,7 +15,7 @@ typedef struct Test {
 } Test;
 
 #define run_tests(table,label) {                    \
-  printf("%s:\n", label);                           \
+  printf("\x1b[33mTEST\x1b[0m: %s\n", label);       \
   size_t n = sizeof(table) / sizeof(*table);        \
   for (size_t i = 0; i < n; i++) {                  \
     Test t = table[i];                              \
@@ -26,6 +26,7 @@ typedef struct Test {
       ? "\x1b[32mPASSED\x1b[0m"                     \
       : "\x1b[31mFAILED\x1b[0m");                   \
   }                                                 \
+  putc('\n', stdout);                               \
 }
 
 #endif

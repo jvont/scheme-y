@@ -1,35 +1,30 @@
-CC := gcc
 CFLAGS = -ansi -Wpedantic -std=c99 -g
 # CFLAGS += -Wall -Wextra
 LDFLAGS = -lm
 
 SRCS := $(wildcard src/*.c)
 OBJS := $(SRCS:.c=.o)
-TARGET := bin/scheme-y
-
-TSRCS := $(wildcard tests/*.c)
-TOBJS := $(TSRCS:.c=.o) $(filter-out %main.o,$(OBJS))
-TESTS := $(TSRCS:tests/%.c=bin/%)
-
-DEPENDS := $(SRCS:.c=.d) $(TSRCS:.c=.d)
+TESTS := $(wildcard test/*.c)
 
 .PHONY: all build rebuild tests clean
 
-all: $(TARGET) tests
-build: $(TARGET)
-rebuild: clean $(TARGET)
+all: bin/scheme-y tests
+build: bin/scheme-y
+rebuild: clean bin/scheme-y
 
-$(TARGET): $(OBJS) | bin
-	$(CC) $^ -o $@ $(LDFLAGS)
+bin/scheme-y: $(OBJS) | bin
+	gcc $^ -o $@ $(LDFLAGS)
 
-tests: $(TESTS)
-	@for f in $^; do ./$$f; done
+tests: $(TESTS:test/%.c=bin/%)
+	@for f in $^; do ./$$f;	done
 
-$(TESTS): $(TOBJS) | bin
-	$(CC) $^ -o $@ $(LDFLAGS)
+# keep intermediate test/%.o files
+.SECONDARY: $(TESTS:.c=.o)
+bin/%: test/%.o $(filter-out %main.o, $(OBJS)) | bin
+	gcc $^ -o $@ $(LDFLAGS)
 
 %.d: %.c
-	$(CC) -MM $^ -MF $@
+	gcc -MM $^ -MF $@
 
 bin:
 	@mkdir -p $@
@@ -39,6 +34,7 @@ clean:
 	@rm -f src/*.o src/*.d
 	@rm -f test/*.o test/*.d
 
+# do not include dependency files on clean
 ifneq ($(MAKECMDGOALS), clean)
--include $(DEPENDS)
+-include $(SRCS:.c=.d) $(TESTS:.c=.d)
 endif
