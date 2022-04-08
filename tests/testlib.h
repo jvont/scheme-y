@@ -22,11 +22,9 @@ typedef struct Test {
     printf("  [%zu/%zu] %s... ", i + 1, n, t.name); \
     fflush(stdout);                                 \
     int r = t.func();                               \
-    printf("%s\n", (r) == TEST_PASS                 \
-      ? "\x1b[32mPASSED\x1b[0m"                     \
-      : "\x1b[31mFAILED\x1b[0m");                   \
+    if (r) { printf("\x1b[31mFAILED\x1b[0m\n"); }   \
+    else { printf("\x1b[32mPASSED\x1b[0m\n"); }     \
   }                                                 \
-  putc('\n', stdout);                               \
 }
 
 #endif

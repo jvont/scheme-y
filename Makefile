@@ -4,7 +4,7 @@ LDFLAGS = -lm
 
 SRCS := $(wildcard src/*.c)
 OBJS := $(SRCS:.c=.o)
-TESTS := $(wildcard test/*.c)
+TESTS := $(wildcard tests/*.c)
 
 .PHONY: all build rebuild tests clean
 
@@ -15,24 +15,23 @@ rebuild: clean bin/scheme-y
 bin/scheme-y: $(OBJS) | bin
 	gcc $^ -o $@ $(LDFLAGS)
 
-tests: $(TESTS:test/%.c=bin/%)
-	@for f in $^; do ./$$f;	done
+tests: $(TESTS:tests/%.c=bin/%)
+	@for f in $^ ; do ./$$f ; done
 
-# keep intermediate test/%.o files
+# keep intermediate tests/%.o files
 .SECONDARY: $(TESTS:.c=.o)
-bin/%: test/%.o $(filter-out %main.o, $(OBJS)) | bin
+bin/%: tests/%.o $(filter-out %main.o, $(OBJS)) | bin
 	gcc $^ -o $@ $(LDFLAGS)
 
 %.d: %.c
 	gcc -MM $^ -MF $@
 
 bin:
-	@mkdir -p $@
+	mkdir -p $@
 
 clean:
-	@rm -rf bin
-	@rm -f src/*.o src/*.d
-	@rm -f test/*.o test/*.d
+	rm -rf bin
+	rm -f src/*.o src/*.d tests/*.o tests/*.d
 
 # do not include dependency files on clean
 ifneq ($(MAKECMDGOALS), clean)
