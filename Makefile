@@ -20,13 +20,13 @@ build: $(TARGET)
 rebuild: clean $(TARGET)
 
 $(TARGET): $(OBJS) | bin
-	gcc $^ -o $@ $(LDFLAGS)
+	$(CC) $^ -o $@ $(LDFLAGS)
 
 tests: $(TESTS)
 	@for f in $^; do ./$$f; done
 
 $(TESTS): $(TOBJS) | bin
-	gcc $^ -o $@ $(LDFLAGS)
+	$(CC) $^ -o $@ $(LDFLAGS)
 
 %.d: %.c
 	$(CC) -MM $^ -MF $@
