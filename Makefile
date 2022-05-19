@@ -16,7 +16,7 @@ build: bin/scheme-y
 bin/scheme-y: $(OBJS) | bin
 	$(CC) $^ -o $@ $(LDFLAGS)
 
-tests: $(TESTS:tests/%.c=bin/%) | bin/scheme-y
+tests: $(TESTS:tests/%.c=bin/%)
 	@for f in $^ ; do ./$$f ; done
 
 # keep intermediate tests/%.o files
